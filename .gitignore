@@ -41,3 +41,8 @@ example
 # generated native folders
 /ios
 /android
+
+# secrets and personal Claude settings
+.env
+.env.*
+.claude/settings.local.json
