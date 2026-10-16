@@ -9,14 +9,22 @@ new session won't know it, so record it here in the same turn.
 - The project was created from Expo's SDK 58 default template, and its
   starter screens were cleared (`reset-project`). `src/app/` holds one blank
   screen. No app screens have been built yet. Typecheck and web build pass.
-- **Waiting on the client.** The questions, with an Answer column to fill
-  in, are in the Claude Doc "E-commerce app: client questions":
+- **First answers are in** (questions 2 and 4, under Decisions). The rest
+  are still open. They're in the Claude Doc "E-commerce app: client
+  questions", which now has 39 questions:
   https://claude.ai/code/artifact/b8bb39ae-33ae-46e7-b9a5-6da327dec0f4
   (read it with the Claude Docs connector; the developer types the client's
   answers there).
-- Next: once the answers come in, write them under Decisions below, then
-  plan the screens. Don't build past the skeleton until questions 1-3 are
-  answered.
+- **A mock for the client** is a clickable Design canvas. It shows every
+  screen in the request, with the open questions in a note beside each
+  screen: https://claude.ai/artifact/6YRqzABYuB7ggZm37rpgmA. The developer
+  shows it to the client to check that we understood the request. It stays
+  private until the developer shares it. What it assumes: reading A, the
+  seller adds products in the same app, "total order" means an item count,
+  and the names and prices are sample data.
+- Next: the client reacts to the mock and answers the rest. Write the
+  answers under Decisions, then plan the screens. Don't build past the
+  skeleton until questions 1-3 and 37 are answered.
 
 ## Who's who
 
@@ -43,19 +51,39 @@ The developer's note: the client wants it as an app and as a website, on
 any phone (Android and iPhone). The current understanding is that "the
 user" is the one selling the products. That isn't confirmed yet.
 
-## Open questions (the five that change everything)
+More context from the developer (2026-10-17): the client sells their
+products at events. That points to reading A (a sales tool for the seller,
+like Loyverse), but the client hasn't confirmed it.
 
-The doc has 36 questions in all. These five come first:
+## Open questions (the ones that change everything)
+
+The doc has 39 questions in all. These come first:
 
 1. Who uses it? A = the seller's own sales tool (like Loyverse POS), B = an
    online shop for customers (like a Shopee shop or a Shopify store),
-   C = both.
-2. Do "the back end" and "the user" both mean the shop owner? In the same
-   app, or a separate admin site?
-3. App Store and Google Play, or a website on any phone at first?
-4. Budget and deadline. Who pays the running costs?
+   C = both. *Open. Selling at events points to A.*
+2. ~~Do "the back end" and "the user" both mean the shop owner?~~ *Answered:
+   "the back end" is the app's inner workings. Still to confirm: does the
+   seller add products and categories in this same app?*
+3. App Store and Google Play, or a website on any phone at first? *Open.
+   Free is preferred, but the App Store costs US$99 a year. Is the website,
+   saved to the iPhone home screen, OK instead?*
+4. ~~Budget and deadline. Who pays the running costs?~~ *Answered (see
+   Decisions).*
 5. Do they sell on Shopee, Lazada, Facebook or Instagram today, and what
-   should this app do that those don't?
+   should this app do that those don't? *Open.*
+
+New questions from the 2026-10-17 answers:
+
+- **37.** Does sales data need to be on more than one device, such as two
+  phones at the table or a laptop at home? With one phone, the data can stay
+  on that phone: free, works offline, and needs no server, but a lost phone
+  loses it unless it's backed up. With more devices, the app needs an online
+  database. **This can change the stack** (see Costs).
+- **38.** Should each order record the event it was sold at, so you can see
+  totals per event?
+- **39.** At a busy table, should one tap on a product add it to the cart, as
+  in Loyverse, instead of opening the product's page first?
 
 ## Stack (decided 2026-10-17; revisit after questions 1 and 3)
 
@@ -80,8 +108,17 @@ The doc has 36 questions in all. These five come first:
     100,000 requests a month, with no custom domain.
   - Apple Developer Program: US$99 a year.
   - Google Play: US$25 once.
-  - Supabase: free plan to start.
+  - Supabase free plan (checked 2026-10-17): 500 MB database, 1 GB file
+    storage, 5 GB egress, and no automatic backups. A free project
+    **pauses after one week without use** and stays down until someone
+    restores it from the dashboard. An event seller may go weeks between
+    events.
+  - The client wants zero running costs (Decisions). The Apple fee breaks
+    that unless iPhone users get the website (question 3). If question 37
+    says one phone is enough, the app may not need Supabase at all. Then
+    the data stays on the phone. Revisit the stack once 37 is answered.
 - Sources: https://expo.dev/pricing, https://expo.dev/changelog,
+  https://supabase.com/pricing, https://help.loyverse.com/help/make-sales,
   https://docs.expo.dev/router/advanced/drawer,
   https://www.infoq.com/news/2020/02/shopify-using-react-native/,
   https://www.technetexperts.com/guideline-4-2-minimum-functionality/,
@@ -105,3 +142,6 @@ The doc has 36 questions in all. These five come first:
 | --- | --- |
 | 2026-10-17 | Stack: Expo SDK 58 + Supabase, one codebase for Android, iPhone and web (above) |
 | 2026-10-17 | Placeholder name "e-commerce-app" until the client gives a shop name |
+| 2026-10-17 | "The back end" means the app's inner workings, not a person or a separate admin site (client, question 2) |
+| 2026-10-17 | No strict deadline (client, question 4) |
+| 2026-10-17 | Use only free services, with no running or maintenance costs (client, question 4) |
