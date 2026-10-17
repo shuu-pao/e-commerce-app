@@ -20,6 +20,14 @@ new session won't know it, so record it here in the same turn.
   https://claude.ai/artifact/6YRqzABYuB7ggZm37rpgmA. It predates the
   replies: it has no stock, colours, search, checkout page, discounts,
   payment method or order editing.
+- **Client questions page** (the 27 still-open questions, tap to answer,
+  for the developer to send to the client):
+  https://claude.ai/artifact/KZDZKxex8tdKWM3fiV1mTb. Answers stay in the
+  client's browser; the client copies them as text and sends them back
+  through the developer, who brings them here. (A page that saves answers
+  online only works for people in the owner's claude.ai organization, so
+  it couldn't be used.) Source:
+  `scratchpad/client-questions/index.html` in the session that made it.
 - **A screen plan is proposed** (below). It isn't approved by the developer
   yet.
 - Next: the developer approves or changes the screen plan. Then update the
