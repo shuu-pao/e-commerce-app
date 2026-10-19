@@ -10,7 +10,7 @@ new session won't know it, so record it here in the same turn.
   starter screens were cleared (`reset-project`). `src/app/` holds one blank
   screen. No app screens have been built yet. Typecheck and web build pass.
 - **The client has replied to the mock.** Their answers are under Decisions
-  below. Questions 1, 2, 4 and 37 are answered; 3 and 28 are the blockers
+  below. Questions 1, 2, 3, 4 and 37 are answered; 28 is the blocker
   now. All the questions (41 now) are in the Claude Doc "E-commerce app:
   client questions":
   https://claude.ai/code/artifact/b8bb39ae-33ae-46e7-b9a5-6da327dec0f4
@@ -20,7 +20,9 @@ new session won't know it, so record it here in the same turn.
   https://claude.ai/artifact/6YRqzABYuB7ggZm37rpgmA. It predates the
   replies: it has no stock, colours, search, checkout page, discounts,
   payment method or order editing.
-- **Client questions page** (the 27 still-open questions, tap to answer,
+- **Question 3 is settled** (2026-10-19): no store apps. The app ships as
+  an installable web app (below).
+- **Client questions page** (the 26 still-open questions, tap to answer,
   for the developer to send to the client):
   https://claude.ai/artifact/KZDZKxex8tdKWM3fiV1mTb. Answers stay in the
   client's browser; the client copies them as text and sends them back
@@ -31,8 +33,8 @@ new session won't know it, so record it here in the same turn.
 - **A screen plan is proposed** (below). It isn't approved by the developer
   yet.
 - Next: the developer approves or changes the screen plan. Then update the
-  mock to match it, so the client can check it, and get answers to 3 and 28.
-  Don't build past the skeleton until 3 and 28 are answered.
+  mock to match it, so the client can check it, and get an answer to 28.
+  Don't build past the skeleton until 28 is answered.
 
 ## Who's who
 
@@ -68,8 +70,6 @@ the developer.
 
 The doc has 41 questions. These matter most now:
 
-- **3.** On the iPad: the website (free), or an App Store app (US$99 a
-  year)? The client wants zero running costs.
 - **28.** Is there internet where they sell? If it drops at an event, must
   checkout keep working? Supabase has no offline mode built in, so offline
   checkout is extra work and may change the stack.
@@ -84,7 +84,21 @@ The doc has 41 questions. These matter most now:
   totals (22, 23), receipts (20), BIR receipts (34), totals per event (38),
   one-tap add (39).
 
-## Stack (decided 2026-10-17; revisit after questions 3 and 28)
+## Stack (decided 2026-10-17; revisit after question 28)
+
+- **How it ships (2026-10-19): an installable web app (PWA), no store
+  apps.** The client opens the site in Safari on the iPad, taps Share, then
+  Add to Home Screen. Since iPadOS 26 every site added that way opens as a
+  web app (full screen, own icon). Same on Android (Chrome) and desktop
+  (Chrome, Edge). Free: no Apple fee, no Google Play fee. Expo supports
+  this with standard web files: `public/manifest.json` (name, icons,
+  `"display": "standalone"`), linked from `src/app/+html.tsx`. A service
+  worker (Workbox) is optional; Expo's docs warn that aggressive caching
+  can stop updates reaching users, so add one only if 28 needs it. Expo
+  still fits: the same code builds the website, and a store app stays
+  possible later. Sources:
+  https://docs.expo.dev/guides/progressive-web-apps/,
+  https://webkit.org/?p=16993
 
 - **Expo SDK 58** (React Native, Expo Router, React Native Web) in
   TypeScript. One codebase builds the Android app, the iPhone and iPad app
@@ -108,9 +122,8 @@ The doc has 41 questions. These matter most now:
 - Costs:
   - Expo free plan: up to 15 Android and 15 iOS builds; EAS Hosting covers
     100,000 requests a month, with no custom domain.
-  - Apple Developer Program: US$99 a year. Only needed for an App Store
-    app (question 3).
-  - Google Play: US$25 once.
+  - Apple Developer Program (US$99 a year) and Google Play (US$25 once):
+    not needed, since there are no store apps.
   - Supabase free plan (checked 2026-10-17): 500 MB database, 1 GB file
     storage, 5 GB egress, and no automatic backups. A free project
     **pauses after one week without use** and stays down until someone
@@ -206,3 +219,4 @@ On the iPad and the desktop it's a sidebar that stays open.
 | 2026-10-17 | The payment method is picked at checkout: Cash, GCash, QR code or BPI (client, question 17) |
 | 2026-10-17 | Order numbers look like 0042, for now (client, question 19) |
 | 2026-10-17 | Orders can be edited after checkout, because a buyer may swap an item after paying (client, question 24) |
+| 2026-10-19 | No App Store or Google Play apps: the app must cost nothing. It ships as an installable web app, added to the iPad's Home Screen from Safari (developer, question 3) |
