@@ -4,15 +4,16 @@ Loaded into every Claude Code session through `CLAUDE.md`. It carries what
 was decided in chat. If something is decided and it isn't written here, a
 new session won't know it, so record it here in the same turn.
 
-## Status (2026-10-17)
+## Status (2026-10-20)
 
 - The project was created from Expo's SDK 58 default template, and its
   starter screens were cleared (`reset-project`). `src/app/` holds one blank
   screen. No app screens have been built yet. Typecheck and web build pass.
-- **The client has replied to the mock.** Their answers are under Decisions
-  below. Questions 1, 2, 3, 4 and 37 are answered; 28 is the blocker
-  now. All the questions (41 now) are in the Claude Doc "E-commerce app:
-  client questions":
+- **The client answered the questions page** (2026-10-20). Answers are
+  under Decisions below. Six answers are unclear and wait on the client
+  (Open questions). Question 28 is answered: checkout must work offline,
+  which shapes the stack (Offline plan, proposed). All the questions (41)
+  are in the Claude Doc "E-commerce app: client questions":
   https://claude.ai/code/artifact/b8bb39ae-33ae-46e7-b9a5-6da327dec0f4
   (read it with the Claude Docs connector; the developer types the client's
   answers there).
@@ -22,19 +23,19 @@ new session won't know it, so record it here in the same turn.
   payment method or order editing.
 - **Question 3 is settled** (2026-10-19): no store apps. The app ships as
   an installable web app (below).
-- **Client questions page** (the 26 still-open questions, tap to answer,
-  for the developer to send to the client):
+- **Client questions page** (26 questions, tap to answer; the client
+  answered it on 2026-10-20):
   https://claude.ai/artifact/KZDZKxex8tdKWM3fiV1mTb. Answers stay in the
   client's browser; the client copies them as text and sends them back
   through the developer, who brings them here. (A page that saves answers
   online only works for people in the owner's claude.ai organization, so
   it couldn't be used.) Source:
   `scratchpad/client-questions/index.html` in the session that made it.
-- **A screen plan is proposed** (below). It isn't approved by the developer
-  yet.
-- Next: the developer approves or changes the screen plan. Then update the
-  mock to match it, so the client can check it, and get an answer to 28.
-  Don't build past the skeleton until 28 is answered.
+- **A screen plan (v2) and an offline plan are proposed** (below). Neither
+  is approved by the developer yet.
+- Next: the developer approves or changes both plans and takes the unclear
+  answers back to the client. Then update the mock to match, so the client
+  can check it.
 
 ## Who's who
 
@@ -68,23 +69,55 @@ the developer.
 
 ## Open questions (the ones that change the build)
 
-The doc has 41 questions. These matter most now:
+Unclear answers from 2026-10-20, to take back to the client:
 
-- **28.** Is there internet where they sell? If it drops at an event, must
-  checkout keep working? Supabase has no offline mode built in, so offline
-  checkout is extra work and may change the stack.
-- **5.** Do they sell on Shopee, Lazada, Facebook or Instagram today?
-- **40.** Does each colour have its own price, or do all colours share
-  one? (Loyverse gives each variant its own price and stock.)
-- **41.** On the iPad, should the cart sit beside the products, as in
-  Square for iPad, instead of on its own screen?
-- Smaller ones still open: photos per product and per colour (6), "Sold
-  out" or hidden when stock runs out (8), more than one category per
-  product (9, the client will decide later), Home (12), report columns and
-  totals (22, 23), receipts (20), BIR receipts (34), totals per event (38),
-  one-tap add (39).
+- **5. Online orders.** "Only at events", but the note adds online orders
+  between events, recorded here to keep stock right. Where do they come in
+  (Facebook, Instagram, other)? Record them like a sale at the table, or
+  do they need a buyer name, address or delivery fee? Do online orders
+  ever happen during an event? If so, an offline iPad can sell a piece an
+  online order already took.
+- **6. Photos.** "One" per product and "yes, a photo per colour". One
+  product photo plus one per colour, or only one photo per colour?
+- **38. Events.** Pick the event once (for example "Selling at: Christmas
+  Bazaar") and every order goes to it until changed? Or pick it on each
+  order? Are events set up ahead on the desktop? Do online orders count
+  as their own "Online" event?
+- **12 and 23. Reports.** Home should show best sellers and shortcuts to
+  daily, weekly, monthly and per-event reports, but the reports answer
+  ticked only per day, chosen dates and Excel. Assumed: reports cover all
+  of those. Excel download = a CSV file, which opens in Excel.
+- **31. Shop name.** A free address is fine, but no shop name, logo or
+  colours yet.
+- **36. Code ownership.** Paolo (the developer) looks after the app. Who
+  owns the code wasn't answered.
 
-## Stack (decided 2026-10-17; revisit after question 28)
+## Offline plan (proposed 2026-10-20, not approved yet)
+
+The client: "Not all venues have good wifi... I can save offline and it can
+update when i get home with wifi" (question 28). Loyverse works the same
+way: offline receipts are stored on the device, marked "Unsynced", and sync
+by themselves when the internet is back; sign-out is blocked while any are
+unsynced.
+
+- Before an event, on Wi-Fi: the iPad downloads the products, photos and
+  stock.
+- At the venue: checkout works with no internet. Orders are saved on the
+  iPad, marked "Not synced", and stock counts down on the iPad.
+- Back online: unsynced orders upload by themselves, and the server takes
+  the stock down. A small badge shows how many orders still wait.
+- Build: a service worker (Workbox) keeps the app and photos on the iPad;
+  orders wait in IndexedDB until sent; the app asks for persistent storage
+  (`navigator.storage.persist()`), which WebKit grants by heuristics such
+  as being a Home Screen web app. No sync service, so no cost.
+- Risks to tell the client: unsynced orders exist only on the iPad, so
+  don't clear Safari's data or delete the app icon before they sync, and
+  sign-out is blocked until then. While offline, the iPad doesn't see
+  edits from the desktop or online orders (question 5).
+- Sources: https://help.loyverse.com/help/offline-work-of-pos,
+  https://webkit.org/?p=14403
+
+## Stack (decided 2026-10-17; offline per the plan above)
 
 - **How it ships (2026-10-19): an installable web app (PWA), no store
   apps.** The client opens the site in Safari on the iPad, taps Share, then
@@ -93,8 +126,9 @@ The doc has 41 questions. These matter most now:
   (Chrome, Edge). Free: no Apple fee, no Google Play fee. Expo supports
   this with standard web files: `public/manifest.json` (name, icons,
   `"display": "standalone"`), linked from `src/app/+html.tsx`. A service
-  worker (Workbox) is optional; Expo's docs warn that aggressive caching
-  can stop updates reaching users, so add one only if 28 needs it. Expo
+  worker (Workbox) is needed for offline use (question 28). Expo's docs
+  warn that aggressive caching can stop updates reaching users, so the
+  worker must check for a new version on each launch. Expo
   still fits: the same code builds the website, and a store app stays
   possible later. Sources:
   https://docs.expo.dev/guides/progressive-web-apps/,
@@ -130,8 +164,9 @@ The doc has 41 questions. These matter most now:
     restores it from the dashboard. An event seller may go weeks between
     events. Plan: ping the database every few days on a schedule. A GitHub
     Actions schedule is free, but GitHub turns schedules off in a
-    **public** repo after 60 days with no activity. So the repo goes
-    private (question 35), or the ping runs somewhere else. Decide when
+    **public** repo after 60 days with no activity, and the client is fine
+    with the repo staying public (question 35). So the ping runs somewhere
+    else, or the repo gets a commit at least every 60 days. Decide when
     Supabase is set up.
 - Sources: https://expo.dev/pricing, https://expo.dev/changelog,
   https://supabase.com/pricing,
@@ -145,54 +180,60 @@ The doc has 41 questions. These matter most now:
   https://www.technetexperts.com/guideline-4-2-minimum-functionality/,
   https://theflutterk.it.com/blog/flutter-web-2026-production-ready
 
-## Proposed screen plan (2026-10-17, not approved yet)
+## Proposed screen plan v2 (2026-10-20, not approved yet)
 
-Built from the request and the client's replies to the mock. Numbers in
-brackets are questions in the doc.
+Built from the request and the client's answers. Numbers in brackets are
+questions in the doc. Changes from v1: one tap adds to the cart, so the
+product page leaves the selling flow (39); the cart sits beside the
+products on the iPad (41); new Reports and Events screens (12, 23, 38).
 
 Selling, on the iPad at events:
 
-1. **Products** (All products and each category): a search bar, then a
-   grid of product cards with the price and the stock left.
-2. **Product**: photos, title, price, description, a colour choice that
-   shows the stock for each colour, quantity up to the stock left, Add to
-   cart.
-3. **Cart**: one line per product and colour, quantity up to the stock
-   left, each line's price on the right, Total order and Total price, Check
-   out. It's a separate screen, or beside the products on the iPad (41).
-4. **Checkout** (new): a discount (none, 10%, a percent typed in, or a peso
-   amount typed in), the payment method (Cash, GCash, QR code, BPI), the
-   total after the discount, Place order. This matches Loyverse, where a
-   discount covers the whole ticket and its value can be typed in during
-   the sale.
-5. **Order placed**: the order number, View summary, New order.
-6. **All orders**: one row per order. Proposed columns: order number,
-   date and time, items, payment, total (22).
-7. **Order summary**: the lines, discount, payment and total, plus Edit
-   order.
-8. **Edit order**: the cart screen, opened on a past order. Saving updates
+1. **Sell** (All products and each category): a search bar, then a grid
+   of product cards with the price and the stock left. The cart sits in a
+   column on the right (41). One tap adds a product (39); if it has
+   several colours, a small picker lists them with their stock, and a
+   colour that ran out shows "Sold out" (8). The cart: one line per
+   product and colour, + and - and remove (14), Total order in pieces
+   (15), Total price, Check out. A badge shows orders not yet synced (28).
+2. **Checkout**: the event (38), a discount (none, 10%, a percent typed
+   in, or a peso amount typed in), the payment method (Cash, GCash, QR
+   code, BPI), the total after the discount, Place order.
+3. **Order placed**: the receipt on screen (20): order number, lines,
+   discount, payment, total, then New order.
+4. **All orders**: one row per order: order number, date and time, items,
+   payment method, discount, total (22). Filter by dates or event;
+   Download to Excel (23).
+5. **Order summary**: the receipt again, plus Edit order (24). No print
+   (25).
+6. **Edit order**: the Sell screen opened on a past order. Saving updates
    the order and puts the stock right.
+7. **Home**: a dashboard: today's sales, best sellers, and shortcuts to
+   the reports (12).
+8. **Reports**: totals per day, week, month, event and chosen dates, best
+   sellers, Download to Excel (12, 23).
 
 Managing, on the desktop before events:
 
-9. **Add or edit product**: photos, title, description, price, category,
-   and the colours, each with its own stock count (and price, if 40 says
-   so).
-10. **Categories**: add and rename, from "Add category" in the menu.
+9. **Products and Add or edit product**: photo (6, unclear), title,
+   description, one price (40), categories, several allowed (9), colours,
+   each with its own stock count and photo. Delete (10).
+10. **Categories**: add, rename, delete (10).
+11. **Events**: add an event and choose the current one (38, unclear).
 
 Other:
 
-11. **Sign in**: one login for the client. The data is online, so the
-    website must be locked.
-12. **Home**: what it shows is still open (12).
+12. **Sign in**: one login for the client. Sign-out is blocked while
+    orders wait to sync (28).
 
-Menu, as the client asked: Home, All products, the categories, All orders.
-On the iPad and the desktop it's a sidebar that stays open.
+Menu: Home, Sell (All products, then the categories), All orders,
+Reports, and on the desktop Products, Categories and Events. On the iPad
+and the desktop it's a sidebar that stays open.
 
 ## Repo and running
 
-- GitHub: https://github.com/shuu-pao/e-commerce-app, **public**. Question
-  35 asks the client whether that's OK. Default branch `main`.
+- GitHub: https://github.com/shuu-pao/e-commerce-app, **public**; the
+  client is fine with that (question 35). Default branch `main`.
 - Never commit secrets: `.env*` is ignored. The Supabase service-role key
   never goes in the app; only the anon key goes in the app, and row-level
   security protects the data.
@@ -220,3 +261,19 @@ On the iPad and the desktop it's a sidebar that stays open.
 | 2026-10-17 | Order numbers look like 0042, for now (client, question 19) |
 | 2026-10-17 | Orders can be edited after checkout, because a buyer may swap an item after paying (client, question 24) |
 | 2026-10-19 | No App Store or Google Play apps: the app must cost nothing. It ships as an installable web app, added to the iPad's Home Screen from Safari (developer, question 3) |
+| 2026-10-20 | Checkout must work offline at venues with weak internet; orders sync later on Wi-Fi (client, question 28). How: Offline plan, proposed |
+| 2026-10-20 | All colours of a product share one price (client, question 40) |
+| 2026-10-20 | On the iPad, the cart sits beside the products, and one tap adds a product (client, questions 41 and 39) |
+| 2026-10-20 | A colour that runs out shows "Sold out" (client, question 8) |
+| 2026-10-20 | A product can be in several categories (client, question 9) |
+| 2026-10-20 | Products and categories can be changed and removed; past orders keep the name and price they sold at (client, question 10) |
+| 2026-10-20 | 50 to 200 products (client, question 11) |
+| 2026-10-20 | Home is a dashboard: best sellers and shortcuts to reports (client, question 12) |
+| 2026-10-20 | The cart can lower quantities and remove items; Total order counts pieces (client, questions 14 and 15) |
+| 2026-10-20 | Receipt shown on the iPad screen only for now; no printing (client, questions 20 and 25) |
+| 2026-10-20 | No BIR official receipts (client, question 34) |
+| 2026-10-20 | All orders columns: order number, date and time, items, payment method, discount, total (client, question 22) |
+| 2026-10-20 | Reports: totals per day and for chosen dates, download to Excel (client, question 23) |
+| 2026-10-20 | Each order records its event, for totals per event (client, question 38) |
+| 2026-10-20 | Free web address; English only; the repo stays public (client, questions 31, 32, 35) |
+| 2026-10-20 | Paolo (the developer) maintains the app after launch (client, question 36) |
