@@ -12,15 +12,17 @@ new session won't know it, so record it here in the same turn.
 - **The client answered the questions page** (2026-10-20). Answers are
   under Decisions below. Six answers are unclear and wait on the client
   (Open questions). Question 28 is answered: checkout must work offline,
-  which shapes the stack (Offline plan, proposed). All the questions (41)
+  which shapes the stack (Offline plan). All the questions (41)
   are in the Claude Doc "E-commerce app: client questions":
   https://claude.ai/code/artifact/b8bb39ae-33ae-46e7-b9a5-6da327dec0f4
   (read it with the Claude Docs connector; the developer types the client's
   answers there).
-- **Mock v1** (clickable Design canvas, sent to the client):
-  https://claude.ai/artifact/6YRqzABYuB7ggZm37rpgmA. It predates the
-  replies: it has no stock, colours, search, checkout page, discounts,
-  payment method or order editing.
+- **Mock** (clickable Design canvas):
+  https://claude.ai/artifact/6YRqzABYuB7ggZm37rpgmA. v1 (phone screens)
+  went to the client on 2026-10-17; v2 (2026-10-20) replaces it and
+  follows the screen plan v2. Source:
+  `scratchpad/shop-mock/project/` in the session that made it; read the
+  canvas's files with the Artifact tool to edit it.
 - **Question 3 is settled** (2026-10-19): no store apps. The app ships as
   an installable web app (below).
 - **Client questions page** (26 questions, tap to answer; the client
@@ -31,11 +33,12 @@ new session won't know it, so record it here in the same turn.
   online only works for people in the owner's claude.ai organization, so
   it couldn't be used.) Source:
   `scratchpad/client-questions/index.html` in the session that made it.
-- **A screen plan (v2) and an offline plan are proposed** (below). Neither
-  is approved by the developer yet.
-- Next: the developer approves or changes both plans and takes the unclear
-  answers back to the client. Then update the mock to match, so the client
-  can check it.
+- **The screen plan v2 and the offline plan are approved** by the developer
+  (2026-10-20). The mock was redrawn to match them (mock v2, same link):
+  iPad landscape screens for selling, desktop pages for managing.
+- Next: the developer sends mock v2 and the six unclear answers (Open
+  questions) to the client. Building can start on the parts those answers
+  don't touch.
 
 ## Who's who
 
@@ -92,7 +95,7 @@ Unclear answers from 2026-10-20, to take back to the client:
 - **36. Code ownership.** Paolo (the developer) looks after the app. Who
   owns the code wasn't answered.
 
-## Offline plan (proposed 2026-10-20, not approved yet)
+## Offline plan (approved 2026-10-20)
 
 The client: "Not all venues have good wifi... I can save offline and it can
 update when i get home with wifi" (question 28). Loyverse works the same
@@ -180,7 +183,7 @@ unsynced.
   https://www.technetexperts.com/guideline-4-2-minimum-functionality/,
   https://theflutterk.it.com/blog/flutter-web-2026-production-ready
 
-## Proposed screen plan v2 (2026-10-20, not approved yet)
+## Screen plan v2 (approved 2026-10-20)
 
 Built from the request and the client's answers. Numbers in brackets are
 questions in the doc. Changes from v1: one tap adds to the cart, so the
@@ -261,7 +264,8 @@ and the desktop it's a sidebar that stays open.
 | 2026-10-17 | Order numbers look like 0042, for now (client, question 19) |
 | 2026-10-17 | Orders can be edited after checkout, because a buyer may swap an item after paying (client, question 24) |
 | 2026-10-19 | No App Store or Google Play apps: the app must cost nothing. It ships as an installable web app, added to the iPad's Home Screen from Safari (developer, question 3) |
-| 2026-10-20 | Checkout must work offline at venues with weak internet; orders sync later on Wi-Fi (client, question 28). How: Offline plan, proposed |
+| 2026-10-20 | Checkout must work offline at venues with weak internet; orders sync later on Wi-Fi (client, question 28). How: the Offline plan (approved by the developer) |
+| 2026-10-20 | Screen plan v2 approved by the developer |
 | 2026-10-20 | All colours of a product share one price (client, question 40) |
 | 2026-10-20 | On the iPad, the cart sits beside the products, and one tap adds a product (client, questions 41 and 39) |
 | 2026-10-20 | A colour that runs out shows "Sold out" (client, question 8) |
