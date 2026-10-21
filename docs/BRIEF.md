@@ -192,6 +192,10 @@ products on the iPad (41); new Reports and Events screens (12, 23, 38).
 
 Selling, on the iPad at events:
 
+The app opens on Sell > All products, never on Home, so people at the
+table don't see the sales (client, 2026-10-22). Every order line (cart,
+Checkout, Order placed, Order summary) starts with a square photo.
+
 1. **Sell** (All products and each category): a search bar, then a grid
    of product cards with the price and the stock left. The cart sits in a
    column on the right (41). One tap adds a product (39); if it has
@@ -212,7 +216,7 @@ Selling, on the iPad at events:
 6. **Edit order**: the Sell screen opened on a past order. Saving updates
    the order and puts the stock right.
 7. **Home**: a dashboard: today's sales, best sellers, and shortcuts to
-   the reports (12).
+   the reports (12). Opened from the menu only.
 8. **Reports**: totals per day, week, month, event and chosen dates, best
    sellers, Download to Excel (12, 23).
 
@@ -281,4 +285,5 @@ and the desktop it's a sidebar that stays open.
 | 2026-10-20 | Each order records its event, for totals per event (client, question 38) |
 | 2026-10-20 | Free web address; English only; the repo stays public (client, questions 31, 32, 35) |
 | 2026-10-20 | Paolo (the developer) maintains the app after launch (client, question 36) |
-| 2026-10-22 | Each cart line shows the product's photo (client, on mock v2). Which photo for a colour waits on question 6 |
+| 2026-10-22 | Every order line starts with a square photo: cart, Checkout, Order placed, Order summary (client, on mock v2). Which photo for a colour waits on question 6 |
+| 2026-10-22 | The app opens on Sell > All products, not Home, so people at the table don't see the sales; Home stays in the menu (client, on mock v2) |
