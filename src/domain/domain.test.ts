@@ -6,6 +6,7 @@ import { test } from 'node:test';
 import { change, checkoutProblems, discountAmount, formatOrderNumber, nextOrderNumber, totals } from './checkout.ts';
 import { ordersToCsv } from './csv.ts';
 import { addMonths, dateKey, isDateKey, monthEnd, weekStart } from './dates.ts';
+import { mergeRemote, nextStamp } from './merge.ts';
 import { formatPeso, parsePeso } from './money.ts';
 import { bestSellers, byDay, byPayment, filterOrders, periodRange, shiftPeriod, summarize } from './reports.ts';
 import { stockByVariant } from './stock.ts';
@@ -111,4 +112,33 @@ test('csv: Excel-ready with quoting', () => {
   assert.match(csv, /#0001,2026-10-18,/);
   assert.match(csv, /"Ana ""AJ"" Reyes","Lahug, Cebu"\r\n$/);
   assert.match(csv, /2 × Daisy claw clip \(Yellow\)/);
+});
+
+test('merge: newer wins, own uploads coming back clear the outbox, newer local edits stay', () => {
+  const t = (iso: string, extra = {}) => ({ id: 'x', updatedAt: iso, ...extra });
+  const tables = { products: { x: t('2026-10-22T10:00:00.000Z', { name: 'local' }) }, categories: {}, events: {}, orders: {}, stock: {} };
+  const outbox = { 'products/x': true as const };
+
+  // Server copy is older: keep ours, keep it queued.
+  let m = mergeRemote(tables, outbox, [{ collection: 'products', record: t('2026-10-22T09:00:00.000Z') }]);
+  assert.equal(m.changed, false);
+
+  // Our own upload coming back (same time): nothing rewritten, outbox cleared.
+  m = mergeRemote(tables, outbox, [{ collection: 'products', record: t('2026-10-22T10:00:00.000Z') }]);
+  assert.deepEqual([m.written.length, m.outbox], [0, {}]);
+
+  // The other device changed it later: take theirs, drop our stale upload.
+  m = mergeRemote(tables, outbox, [{ collection: 'products', record: t('2026-10-22T11:00:00.000Z', { name: 'theirs' }) }]);
+  assert.equal((m.tables.products.x as { name?: string }).name, 'theirs');
+  assert.deepEqual(m.outbox, {});
+
+  // New record, unknown collection ignored.
+  m = mergeRemote(tables, {}, [{ collection: 'orders', record: { id: 'o', updatedAt: '2026-10-22T11:00:00.000Z' } }, { collection: 'nope' as never, record: t('2026') }]);
+  assert.deepEqual(Object.keys(m.tables.orders), ['o']);
+  assert.equal(m.written.length, 1);
+});
+
+test('merge: change times never go backwards on a device with a slow clock', () => {
+  assert.equal(nextStamp('2026-10-22T10:00:00.000Z', Date.parse('2026-10-22T09:00:00.000Z')), '2026-10-22T10:00:00.001Z');
+  assert.equal(nextStamp(undefined, Date.parse('2026-10-22T09:00:00.000Z')), '2026-10-22T09:00:00.000Z');
 });

@@ -26,7 +26,7 @@ export default function Sell() {
   const products = useLive('products');
   const categoryName = useAppState((s) => (category ? s.db.categories[category]?.name : undefined));
   const cart = useAppState((s) => s.cart);
-  const stock = useStockLeft();
+  const stock = useStockLeft(true);
   const [query, setQuery] = useState('');
   const [picking, setPicking] = useState<Product | null>(null);
   const [cartOpen, setCartOpen] = useState(false);

@@ -20,7 +20,8 @@ from the mock.
 ## Checks
 
 ```bash
-npm test             # money, discounts, split payment, stock, reports, CSV
+npm test             # money, discounts, split payment, stock, reports, CSV, sync merging
+npm run test:db      # the Supabase migration in real Postgres (PGlite): access rules, uploads
 npm run typecheck    # needs .expo/types: run `npx expo start` once first
 npx expo lint
 npm run build:web    # production build + service worker in dist/

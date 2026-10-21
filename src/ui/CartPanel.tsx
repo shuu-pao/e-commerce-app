@@ -20,7 +20,7 @@ export function CartPanel({ onCheckout }: { onCheckout?: () => void }) {
   const cart = useAppState((s) => s.cart);
   const editing = useAppState((s) => (s.cart.editingOrderId ? s.db.orders[s.cart.editingOrderId] : undefined));
   const products = useAppState((s) => s.db.products);
-  const stock = useStockLeft();
+  const stock = useStockLeft(true);
   const [confirmClear, setConfirmClear] = useState(false);
   const t = totals({ lines: cart.lines, discount: { kind: 'none' }, deliveryFee: 0 });
 

@@ -4,10 +4,15 @@
 import { randomUUID } from 'expo-crypto';
 
 import { nextOrderNumber } from '@/domain/checkout';
+import { mergeRemote, nextStamp, type Tables } from '@/domain/merge';
 import type { CollectionName, Collections, Id, Order, OrderLine, Product, ShopEvent, StockAdjustment } from '@/domain/types';
 import { COLLECTIONS, ONLINE_EVENT_ID } from '@/domain/types';
 
 import * as storage from './storage';
+import { supabase } from './supabase';
+
+/** Without Supabase nothing ever uploads, so don't keep an outbox (it would only grow). */
+const TRACK = supabase !== null;
 
 export type Db = { [K in CollectionName]: Record<Id, Collections[K]> };
 
@@ -129,23 +134,17 @@ export function newId(): Id {
   return randomUUID();
 }
 
-/** Never older than the record it replaces, even if this device's clock is behind. */
-function nextStamp(previous: string | undefined): string {
-  const now = Date.now();
-  const prev = previous ? Date.parse(previous) : 0;
-  return new Date(Math.max(now, prev + 1)).toISOString();
-}
-
 function writeRecords<K extends CollectionName>(collection: K, records: Collections[K][], toOutbox: boolean) {
   const table = { ...state.db[collection] } as Record<Id, Collections[K]>;
   const outbox = { ...state.outbox };
+  const track = toOutbox && TRACK;
   for (const r of records) {
     table[r.id] = r;
-    if (toOutbox) outbox[key(collection, r.id)] = true;
+    if (track) outbox[key(collection, r.id)] = true;
   }
-  setState({ db: { ...state.db, [collection]: table }, outbox: toOutbox ? outbox : state.outbox });
+  setState({ db: { ...state.db, [collection]: table }, outbox: track ? outbox : state.outbox });
   const entries: [string, unknown][] = records.map((r) => [key(collection, r.id), r]);
-  if (toOutbox) entries.push([OUTBOX_KEY, outbox]);
+  if (track) entries.push([OUTBOX_KEY, outbox]);
   persist(entries);
 }
 
@@ -175,23 +174,10 @@ export interface RemoteRecord {
 
 /** Newer wins. A local change that is newer than the server's copy stays and uploads next. */
 export function applyRemote(rows: RemoteRecord[]) {
-  const db = { ...state.db };
-  const outbox = { ...state.outbox };
-  const entries: [string, unknown][] = [];
-  for (const { collection, record } of rows) {
-    if (!COLLECTIONS.includes(collection)) continue;
-    const local = db[collection][record.id];
-    const age = local ? Date.parse(local.updatedAt) - Date.parse(record.updatedAt) : -1;
-    if (age > 0) continue;
-    delete outbox[key(collection, record.id)];
-    if (age === 0) continue; // our own upload coming back
-    db[collection] = { ...db[collection], [record.id]: record } as never;
-    entries.push([key(collection, record.id), record]);
-  }
-  if (!entries.length && Object.keys(outbox).length === Object.keys(state.outbox).length) return;
-  setState({ db, outbox });
-  entries.push([OUTBOX_KEY, outbox]);
-  persist(entries);
+  const merged = mergeRemote(state.db as unknown as Tables, state.outbox, rows);
+  if (!merged.changed) return;
+  setState({ db: merged.tables as unknown as Db, outbox: merged.outbox });
+  persist([...merged.written, [OUTBOX_KEY, merged.outbox]]);
 }
 
 /** Clears outbox entries whose record hasn't changed again since it was uploaded. */
@@ -200,6 +186,14 @@ export function markUploaded(uploaded: { collection: CollectionName; id: Id; upd
   for (const u of uploaded) {
     if (state.db[u.collection][u.id]?.updatedAt === u.updatedAt) delete outbox[key(u.collection, u.id)];
   }
+  setState({ outbox });
+  persist([[OUTBOX_KEY, outbox]]);
+}
+
+/** Queues every record for upload: on first sign-in, data made before syncing reaches the server. */
+export function queueEverything() {
+  const outbox = { ...state.outbox };
+  for (const collection of COLLECTIONS) for (const id of Object.keys(state.db[collection])) outbox[key(collection, id)] = true;
   setState({ outbox });
   persist([[OUTBOX_KEY, outbox]]);
 }

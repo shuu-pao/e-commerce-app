@@ -70,7 +70,10 @@ begin
        ) then
       select coalesce(max((data->>'number')::int), 0) + 1 into next_number from records where collection = 'orders';
       r := jsonb_set(r, '{data,number}', to_jsonb(next_number));
-      r := jsonb_set(r, '{data,updatedAt}', to_jsonb(to_char(clock_timestamp() at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')));
+      -- Newer than the upload even if the device's clock runs ahead, so the device takes the new number.
+      r := jsonb_set(r, '{data,updatedAt}', to_jsonb(to_char(
+        greatest(clock_timestamp(), (r->>'updated_at')::timestamptz + interval '1 millisecond') at time zone 'utc',
+        'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')));
       r := jsonb_set(r, '{updated_at}', r->'data'->'updatedAt');
     end if;
 

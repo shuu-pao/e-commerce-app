@@ -76,9 +76,19 @@ new session needs to know beyond that:
   (it writes `.expo/types`), then `npm run typecheck`.
 - **Tests**: `npm test` runs `src/domain/*.test.ts` with Node's built-in
   runner (Node 23.6+ runs TypeScript directly; domain files import each
-  other with `.ts` extensions for that reason).
+  other with `.ts` extensions for that reason). It covers money, discounts,
+  split payment and change, stock, reports, CSV, and the sync merge rules
+  (`src/domain/merge.ts`). `npm run test:db` runs the Supabase migration in
+  real Postgres (PGlite) and checks access rules, newest-wins uploads and
+  order renumbering.
 - **Not tested yet**: signing in and syncing against a real Supabase
-  project (needs the developer's project), and the app on a real iPad.
+  project (needs the developer's project; the SQL and the merge rules are
+  tested separately), and the app on a real iPad (tested in Chromium at
+  iPad landscape, iPad portrait and phone sizes, plus offline with the
+  server stopped).
+- Device clocks: newest-wins trusts each device's clock. The server
+  renumber always stamps newer than the upload, and a device never stamps a
+  record older than its last change.
 - `npm audit` lists issues in Expo's build tooling (config plugins), not in
   code that ships to the browser; they clear with Expo SDK updates.
 

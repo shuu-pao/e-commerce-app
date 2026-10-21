@@ -17,11 +17,14 @@ export function useLive<K extends CollectionName>(collection: K): Collections[K]
   return useMemo(() => Object.values(table).filter((r) => !r.deleted) as Collections[K][], [table]);
 }
 
-/** Stock left per variant id. While editing an order, its own pieces count as available. */
-export function useStockLeft(): Map<Id, number> {
+/**
+ * Stock left per variant id. For selling, an order open for editing counts its own pieces
+ * as available (pass forSelling). Stock counts on the product screens use the true number.
+ */
+export function useStockLeft(forSelling = false): Map<Id, number> {
   const stock = useAppState((s) => s.db.stock);
   const orders = useAppState((s) => s.db.orders);
-  const editing = useAppState((s) => s.cart.editingOrderId);
+  const editing = useAppState((s) => (forSelling ? s.cart.editingOrderId : null));
   return useMemo(
     () => stockByVariant(Object.values(stock), Object.values(orders), editing ?? undefined),
     [stock, orders, editing],

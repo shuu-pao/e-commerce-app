@@ -173,6 +173,7 @@ export async function signIn(email: string, password: string): Promise<string | 
   const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
   if (error) return isNetworkError(error) ? 'No internet. Signing in needs a connection the first time.' : 'Wrong email or password.';
   store.updateSettings({ signedInEmail: email.trim(), lastPulledAt: null });
+  store.queueEverything();
   void syncNow();
   return null;
 }
