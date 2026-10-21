@@ -9,9 +9,9 @@ new session won't know it, so record it here in the same turn.
 - The project was created from Expo's SDK 58 default template, and its
   starter screens were cleared (`reset-project`). `src/app/` holds one blank
   screen. No app screens have been built yet. Typecheck and web build pass.
-- **The client answered the questions page** (2026-10-20). Answers are
-  under Decisions below. Six answers are unclear and wait on the client
-  (Open questions). Question 28 is answered: checkout must work offline,
+- **The client answered the questions page** (round 1 on 2026-10-20,
+  round 2 on 2026-10-22). Answers are under Decisions below. Question 28
+  is answered: checkout must work offline,
   which shapes the stack (Offline plan). All the questions (41)
   are in the Claude Doc "E-commerce app: client questions":
   https://claude.ai/code/artifact/b8bb39ae-33ae-46e7-b9a5-6da327dec0f4
