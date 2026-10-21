@@ -4,7 +4,7 @@ Loaded into every Claude Code session through `CLAUDE.md`. It carries what
 was decided in chat. If something is decided and it isn't written here, a
 new session won't know it, so record it here in the same turn.
 
-## Status (2026-10-20)
+## Status (2026-10-22)
 
 - The project was created from Expo's SDK 58 default template, and its
   starter screens were cleared (`reset-project`). `src/app/` holds one blank
@@ -36,14 +36,19 @@ new session won't know it, so record it here in the same turn.
 - **The screen plan v2 and the offline plan are approved** by the developer
   (2026-10-20). The mock was redrawn to match them (mock v2, same link):
   iPad landscape screens for selling, desktop pages for managing.
-- Next: the developer sends the round 2 questions page (the 9 Open
-  questions) to the client. Building can start on the parts those answers
-  don't touch.
+- **Every client question is answered** (round 2, 2026-10-22). The shop
+  is called **caracebu**.
+- **Ownership: the app and its code belong to Paolo (the developer)**, not
+  the client. Settled; don't ask about it again.
+- Next: build. The mock doesn't show the round 2 answers yet (shop name,
+  cash change, split payment, online order details, events on the iPad);
+  update it only if the developer asks.
 
 ## Who's who
 
-- **The developer** (repo owner, GitHub `shuu-pao`) builds this for a
-  **client**, and the client's requirements reach us through the developer.
+- **The developer** (Paolo, repo owner, GitHub `shuu-pao`) builds this for
+  a **client**, and the client's requirements reach us through the
+  developer. The app and its code belong to the developer.
 - When a requirement is ambiguous, don't settle it yourself. Write the
   question down for the developer to ask the client.
 
@@ -70,39 +75,11 @@ desktop computer. At the event they check out on an iPad. The client's
 replies to the mock were screenshots in Cebuano and English, sent through
 the developer.
 
-## Open questions (the ones that change the build)
+## Open questions
 
-Unclear answers from 2026-10-20, to take back to the client:
-
-- **5. Online orders.** "Only at events", but the note adds online orders
-  between events, recorded here to keep stock right. Where do they come in
-  (Facebook, Instagram, other)? Record them like a sale at the table, or
-  do they need a buyer name, address or delivery fee? Do online orders
-  ever happen during an event? If so, an offline iPad can sell a piece an
-  online order already took.
-- **6. Photos.** "One" per product and "yes, a photo per colour". One
-  product photo plus one per colour, or only one photo per colour?
-- **38. Events.** Pick the event once (for example "Selling at: Christmas
-  Bazaar") and every order goes to it until changed? Or pick it on each
-  order? Are events set up ahead on the desktop? Do online orders count
-  as their own "Online" event?
-- **12 and 23. Reports.** Home should show best sellers and shortcuts to
-  daily, weekly, monthly and per-event reports, but the reports answer
-  ticked only per day, chosen dates and Excel. Assumed: reports cover all
-  of those. Excel download = a CSV file, which opens in Excel.
-- **31. Shop name.** A free address is fine, but no shop name, logo or
-  colours yet.
-- **36. Code ownership.** Paolo (the developer) looks after the app. Who
-  owns the code wasn't answered.
-- **Hiding amounts** (from mock v2 feedback, 2026-10-22). Home hides peso
-  amounts until tapped; should All orders and Reports too?
-- **Cash and change.** Ask how much cash the buyer gave and show the
-  change, as Loyverse does?
-- **Split payment.** Part cash, part GCash on one order?
-
-This is the complete list (2026-10-22). The developer asks the client all
-of it at once, so don't raise new client questions one at a time: add
-them here and batch them.
+None. The client answered round 2 on 2026-10-22 (Decisions below). New
+client questions get batched here and asked all at once; never trickle
+them out one reply at a time.
 
 ## Offline plan (approved 2026-10-20)
 
@@ -126,6 +103,11 @@ unsynced.
   don't clear Safari's data or delete the app icon before they sync, and
   sign-out is blocked until then. While offline, the iPad doesn't see
   edits from the desktop or online orders (question 5).
+- Online orders do come in during events (client, 2026-10-22), so an
+  offline iPad can sell a piece an online order already took. Default
+  (developer-level, no client question): the sale still saves; when it
+  syncs and stock would drop below zero, the product is marked "Oversold
+  by N" for the client to fix.
 - Sources: https://help.loyverse.com/help/offline-work-of-pos,
   https://webkit.org/?p=14403
 
@@ -214,7 +196,10 @@ Checkout, Order placed, Order summary) starts with a square photo.
    (15), Total price, Check out. A badge shows orders not yet synced (28).
 2. **Checkout**: the event (38), a discount (none, 10%, a percent typed
    in, or a peso amount typed in), the payment method (Cash, GCash, QR
-   code, BPI), the total after the discount, Place order.
+   code, BPI), the total after the discount, Place order. Payment can be
+   split across methods (43). For cash, type the amount received and the
+   app shows the change (42). When the event is "Online": the buyer's
+   name, address and a delivery fee (5).
 3. **Order placed**: the receipt on screen (20): order number, lines,
    discount, payment, total, then New order.
 4. **All orders**: one row per order: order number, date and time, items,
@@ -232,11 +217,13 @@ Checkout, Order placed, Order summary) starts with a square photo.
 
 Managing, on the desktop before events:
 
-9. **Products and Add or edit product**: photo (6, unclear), title,
+9. **Products and Add or edit product**: one product photo (6), title,
    description, one price (40), categories, several allowed (9), colours,
    each with its own stock count and photo. Delete (10).
 10. **Categories**: add, rename, delete (10).
-11. **Events**: add an event and choose the current one (38, unclear).
+11. **Events**: add an event and choose the current one (38). Used on the
+    iPad on the day, so it's in the iPad menu too. A permanent "Online"
+    event holds online orders.
 
 Other:
 
@@ -244,7 +231,7 @@ Other:
     orders wait to sync (28).
 
 Menu: Home, Sell (All products, then the categories), All orders,
-Reports, and on the desktop Products, Categories and Events. On the iPad
+Reports, then Products, Categories and Events (on both devices). On the iPad
 and the desktop it's a sidebar that stays open.
 
 ## Repo and running
@@ -264,7 +251,7 @@ and the desktop it's a sidebar that stays open.
 | Date | Decision |
 | --- | --- |
 | 2026-10-17 | Stack: Expo SDK 58 + Supabase, one codebase for Android, iPhone, iPad and web (above) |
-| 2026-10-17 | Placeholder name "e-commerce-app" until the client gives a shop name |
+| 2026-10-17 | Placeholder name "e-commerce-app" until the client gives a shop name (given 2026-10-22: caracebu) |
 | 2026-10-17 | "The back end" means the app's inner workings, not a person or a separate admin site (client, question 2) |
 | 2026-10-17 | No strict deadline (client, question 4) |
 | 2026-10-17 | Use only free services, with no running or maintenance costs (client, question 4) |
@@ -298,3 +285,12 @@ and the desktop it's a sidebar that stays open.
 | 2026-10-22 | Every order line starts with a square photo: cart, Checkout, Order placed, Order summary (client, on mock v2). Which photo for a colour waits on question 6 |
 | 2026-10-22 | The app opens on Sell > All products, not Home, so people at the table don't see the sales; Home stays in the menu (client, on mock v2) |
 | 2026-10-22 | Home hides its peso amounts until Show amounts is tapped (developer, for the client's privacy concern) |
+| 2026-10-22 | Shop name: caracebu. No logo or colours given, so the mock's look stays (client, question 31) |
+| 2026-10-22 | The app and its code belong to Paolo (the developer), who also maintains it (client and developer, question 36) |
+| 2026-10-22 | Online orders come from Instagram, also during events. They record the buyer's name, address and a delivery fee, and go to a permanent "Online" event, reported by day, week or month (client, questions 5 and 38) |
+| 2026-10-22 | Events are added on the iPad on the day and picked once ("Selling at: ...") until changed (client, question 38) |
+| 2026-10-22 | Cash payments: type the cash received, the app shows the change (client, question 42) |
+| 2026-10-22 | Split payment: one order can be paid across several methods (client, question 43) |
+| 2026-10-22 | Photos: one per product, plus one per colour (client, question 6) |
+| 2026-10-22 | Reports set confirmed: per day, week, month, event or chosen dates, best sellers, payment methods, Excel download (client, questions 12 and 23) |
+| 2026-10-22 | Only Home hides amounts; All orders and Reports show them (client) |
