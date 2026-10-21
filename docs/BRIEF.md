@@ -25,14 +25,14 @@ new session won't know it, so record it here in the same turn.
   don't survive between sessions) and edit those.
 - **Question 3 is settled** (2026-10-19): no store apps. The app ships as
   an installable web app (below).
-- **Client questions page** (26 questions, tap to answer; the client
-  answered it on 2026-10-20):
-  https://claude.ai/artifact/KZDZKxex8tdKWM3fiV1mTb. Answers stay in the
+- **Client questions page**: https://claude.ai/artifact/KZDZKxex8tdKWM3fiV1mTb.
+  Round 1 (26 questions) was answered on 2026-10-20. Round 2 (2026-10-22)
+  holds only the 9 still open (Open questions), numbered 1 to 9 on the
+  page. Answers stay in the
   client's browser; the client copies them as text and sends them back
   through the developer, who brings them here. (A page that saves answers
   online only works for people in the owner's claude.ai organization, so
-  it couldn't be used.) Source:
-  `scratchpad/client-questions/index.html` in the session that made it.
+  it couldn't be used.) To edit it, read it with the Artifact tool.
 - **The screen plan v2 and the offline plan are approved** by the developer
   (2026-10-20). The mock was redrawn to match them (mock v2, same link):
   iPad landscape screens for selling, desktop pages for managing.
