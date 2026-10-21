@@ -1,0 +1,24 @@
+# Supabase pauses a free project after a week without use. Between events the app can sit
+# unused for weeks, so this pings the database every 3 days.
+# Needs repository secrets SUPABASE_URL and SUPABASE_ANON_KEY (Settings › Secrets › Actions).
+# GitHub turns off schedules in a public repo after 60 days with no commits: if that happens,
+# re-enable it under Actions, or push any commit.
+name: Keep Supabase awake
+
+on:
+  schedule:
+    - cron: '17 3 */3 * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+    steps:
+      - name: Ping the database
+        if: ${{ env.SUPABASE_URL != '' }}
+        run: curl -fsS "$SUPABASE_URL/rest/v1/records?select=id&limit=1" -H "apikey: $SUPABASE_ANON_KEY" -o /dev/null

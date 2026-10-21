@@ -17,16 +17,17 @@ interface Props {
 export function ConfirmDialog({ visible, title, message, confirmLabel, onConfirm, onCancel }: Props) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
-      <Pressable style={styles.scrim} onPress={onCancel} accessibilityLabel="Close" accessibilityRole="button">
-        <Pressable style={styles.card} onPress={() => {}} accessibilityRole="alert" accessibilityViewIsModal>
+      <View style={styles.scrim}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} accessibilityLabel="Close" />
+        <View style={styles.card} accessibilityRole="alert" accessibilityViewIsModal>
           <Txt variant="heading">{title}</Txt>
           {message ? <Txt color={colors.body}>{message}</Txt> : null}
           <View style={styles.actions}>
             <Button label="Cancel" variant="ghost" onPress={onCancel} />
             <Button label={confirmLabel} onPress={onConfirm} />
           </View>
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 }

@@ -170,7 +170,15 @@ function UpdateBanner() {
   return (
     <View style={[styles.sync, styles.update]}>
       <Txt weight="bold" color={colors.accent} style={styles.syncText}>A new version is ready</Txt>
-      <Button label="Reload" variant="outline" onPress={() => window.location.reload()} />
+      <Button
+        label="Reload"
+        variant="outline"
+        onPress={() => {
+          const w = window as typeof window & { __applyUpdate?: () => void };
+          if (w.__applyUpdate) w.__applyUpdate();
+          else window.location.reload();
+        }}
+      />
     </View>
   );
 }

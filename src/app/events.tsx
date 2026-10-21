@@ -97,7 +97,7 @@ export default function Events() {
             <View key={e.id} style={styles.row}>
               <View style={{ flex: 1, minWidth: 160, gap: 2 }}>
                 <Txt weight="semibold">{e.name}</Txt>
-                <Txt variant="small">{[dates(e), `${s.orders} orders`, formatPeso(s.sales)].filter(Boolean).join(' · ')}</Txt>
+                <Txt variant="small">{[dates(e), `${s.orders} ${s.orders === 1 ? 'order' : 'orders'}`, formatPeso(s.sales)].filter(Boolean).join(' · ')}</Txt>
               </View>
               {isCurrent ? (
                 <Txt style={styles.pill}>Current</Txt>

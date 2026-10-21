@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="%LANG_ISO_CODE%">
+  <head>
+    <meta charset="utf-8" />
+    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>%WEB_TITLE%</title>
+    <!-- Installable web app: Safari › Share › Add to Home Screen on the iPad. -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#FFFFFF" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="caracebu" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
+    <style id="expo-reset">
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+      #root {
+        display: flex;
+        height: 100%;
+        flex: 1;
+      }
+    </style>
+    <script>
+      // Offline support: sw.js (made by Workbox at build time) keeps the app on the device.
+      // A new version waits until the seller taps Reload in the sidebar, so a sale is never interrupted.
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker
+            .register('/sw.js')
+            .then(function (reg) {
+              function ready() {
+                window.__updateReady = true;
+                window.dispatchEvent(new Event('appupdate'));
+              }
+              window.__applyUpdate = function () {
+                if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                else location.reload();
+              };
+              if (reg.waiting && navigator.serviceWorker.controller) ready();
+              reg.addEventListener('updatefound', function () {
+                var worker = reg.installing;
+                if (!worker) return;
+                worker.addEventListener('statechange', function () {
+                  if (worker.state === 'installed' && navigator.serviceWorker.controller) ready();
+                });
+              });
+              reg.update().catch(function () {});
+            })
+            .catch(function () {
+              // No sw.js (development server) or no secure context: the app still works online.
+            });
+          var reloading = false;
+          navigator.serviceWorker.addEventListener('controllerchange', function () {
+            if (reloading || !window.__updateReady) return;
+            reloading = true;
+            location.reload();
+          });
+        });
+      }
+    </script>
+  </head>
+
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

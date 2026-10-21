@@ -124,7 +124,7 @@ export default function Reports() {
             <Card>
               <Txt variant="heading">By day</Txt>
               {days.map((d) => (
-                <Row key={d.day} label={formatDay(d.day)} value={`${d.orders} orders · ${d.pieces} pcs · ${formatPeso(d.sales)}`} />
+                <Row key={d.day} label={formatDay(d.day)} value={`${d.orders} ${d.orders === 1 ? 'order' : 'orders'} · ${d.pieces} pcs · ${formatPeso(d.sales)}`} />
               ))}
             </Card>
             <Card>

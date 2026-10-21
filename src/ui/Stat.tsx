@@ -14,5 +14,5 @@ export function Stat({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  stat: { flexGrow: 1, flexBasis: 180, padding: 16, gap: 4, borderWidth: 1, borderColor: colors.line, borderRadius: radius.lg },
+  stat: { flexGrow: 1, flexBasis: 150, padding: 16, gap: 4, borderWidth: 1, borderColor: colors.line, borderRadius: radius.lg },
 });

@@ -182,7 +182,12 @@ export async function signOut(): Promise<string | null> {
   if (!supabase) return null;
   const waiting = Object.keys(store.getState().outbox).length;
   if (waiting) return `${waiting} change${waiting === 1 ? '' : 's'} still need to upload. Connect to the internet and wait for them to sync first.`;
-  await supabase.auth.signOut().catch(() => undefined);
+  // Revoke the session on the server; if that can't happen (offline), still remove it from this device.
+  const { error } = await supabase.auth.signOut().catch((e: unknown) => ({ error: e }));
+  if (error) {
+    const local = await supabase.auth.signOut({ scope: 'local' }).catch((e: unknown) => ({ error: e }));
+    if (local.error) return 'Signing out failed. Close the app, open it again and try once more.';
+  }
   await store.clearDevice();
   return null;
 }

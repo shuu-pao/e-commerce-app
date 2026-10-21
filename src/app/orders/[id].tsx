@@ -10,6 +10,7 @@ import { formatPeso } from '@/domain/money';
 import { paymentLabel } from '@/domain/types';
 import { useAppState, useEventName } from '@/data/hooks';
 import { cartEditOrder, remove } from '@/data/store';
+import { syncEnabled } from '@/data/sync';
 import { Button } from '@/ui/Button';
 import { ConfirmDialog } from '@/ui/ConfirmDialog';
 import { OrderLines } from '@/ui/OrderLines';
@@ -22,6 +23,7 @@ export default function OrderSummary() {
   const { id, placed } = useLocalSearchParams<{ id: string; placed?: string }>();
   const order = useAppState((s) => s.db.orders[id]);
   const unsynced = useAppState((s) => !!s.outbox[`orders/${id}`]);
+  const syncNote = !syncEnabled ? 'Saved on this device.' : unsynced ? 'Saved on this device. Not synced yet.' : 'Synced';
   const cartBusy = useAppState((s) => s.cart.lines.length > 0 && s.cart.editingOrderId !== id);
   const eventName = useEventName();
   const [ask, setAsk] = useState<'edit' | 'delete' | null>(null);
@@ -56,9 +58,7 @@ export default function OrderSummary() {
       <View style={styles.head}>
         <Txt variant={placed ? 'heading' : 'title'}>Order {title}</Txt>
         <Txt color={colors.muted}>{formatDateTime(order.createdAt)} · {eventName(order.eventId)}</Txt>
-        <Txt weight="semibold" color={unsynced ? colors.warnInk : colors.okInk}>
-          {unsynced ? 'Saved on this device. Not synced yet.' : 'Synced'}
-        </Txt>
+        <Txt weight="semibold" color={syncEnabled && unsynced ? colors.warnInk : colors.okInk}>{syncNote}</Txt>
       </View>
 
       <Card>
@@ -67,12 +67,14 @@ export default function OrderSummary() {
           <Row label={`Subtotal (${t.pieces} ${t.pieces === 1 ? 'piece' : 'pieces'})`} value={formatPeso(t.subtotal)} />
           {t.discount ? <Row label={order.discount.kind === 'percent' ? `Discount (${order.discount.percent}%)` : 'Discount'} value={formatPeso(-t.discount)} /> : null}
           {t.deliveryFee ? <Row label="Delivery fee" value={formatPeso(t.deliveryFee)} /> : null}
+          <Row label="Total" value={formatPeso(t.total)} strong />
+        </View>
+        <View style={styles.totals}>
           {order.payments.map((p, i) => (
             <Row key={i} label={order.payments.length > 1 ? `Paid by ${paymentLabel(p.method)}` : 'Paid by'} value={order.payments.length > 1 ? formatPeso(p.amount) : paymentLabel(p.method)} />
           ))}
           {order.cashReceived !== null ? <Row label="Cash received" value={formatPeso(order.cashReceived)} /> : null}
           {changeDue !== null ? <Row label="Change" value={formatPeso(changeDue)} /> : null}
-          <Row label="Total" value={formatPeso(t.total)} strong />
         </View>
       </Card>
 

@@ -67,6 +67,7 @@ function AppDrawer() {
       backBehavior="history"
       screenOptions={{
         drawerType: permanent ? 'permanent' : 'front',
+        headerLeft: permanent ? () => null : undefined, // no menu button while the sidebar is always open
         drawerStyle: { width: 260, backgroundColor: colors.surface, borderRightWidth: 0 },
         overlayColor: colors.scrim,
         headerShadowVisible: false,

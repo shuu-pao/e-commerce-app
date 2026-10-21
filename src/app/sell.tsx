@@ -19,7 +19,7 @@ import { colors, fonts, radius, touch, WIDE } from '@/ui/theme';
 import { Txt } from '@/ui/Txt';
 
 const CART_WIDTH = 360;
-const CARD_MIN = 170;
+const CARD_MIN = 140;
 
 export default function Sell() {
   const { category } = useLocalSearchParams<{ category?: string }>();
@@ -177,9 +177,10 @@ function ProductCard({ product, left, columns, onPress }: { product: Product; le
 function ColourPicker({ product, free, onPick, onClose }: { product: Product | null; free: (variantId: string) => number; onPick: (p: Product, v: Variant) => void; onClose: () => void }) {
   return (
     <Modal visible={!!product} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.scrim} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close">
+      <View style={styles.scrim}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close" />
         {product ? (
-          <Pressable style={styles.picker} onPress={() => {}} accessibilityViewIsModal>
+          <View style={styles.picker} accessibilityViewIsModal>
             <Txt variant="heading">{product.name}</Txt>
             <Txt color={colors.muted}>Which colour?</Txt>
             {product.variants.map((v) => {
@@ -204,9 +205,9 @@ function ColourPicker({ product, free, onPick, onClose }: { product: Product | n
               );
             })}
             <Button label="Cancel" variant="ghost" onPress={onClose} />
-          </Pressable>
+          </View>
         ) : null}
-      </Pressable>
+      </View>
     </Modal>
   );
 }

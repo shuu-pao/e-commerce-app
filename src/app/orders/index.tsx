@@ -10,6 +10,7 @@ import { filterOrders, summarize } from '@/domain/reports';
 import type { Order } from '@/domain/types';
 import { paymentLabel } from '@/domain/types';
 import { useAppState, useEventName, useLive } from '@/data/hooks';
+import { syncEnabled } from '@/data/sync';
 import { downloadText } from '@/lib/download';
 import { Button } from '@/ui/Button';
 import { Choice } from '@/ui/Choice';
@@ -78,7 +79,7 @@ export default function Orders() {
         </View>
       }
       ListEmptyComponent={<Empty title="No orders" message="No orders match these dates and event." />}
-      renderItem={({ item }) => <OrderRow order={item} table={table} unsynced={!!outbox[`orders/${item.id}`]} eventName={eventName(item.eventId)} />}
+      renderItem={({ item }) => <OrderRow order={item} table={table} unsynced={syncEnabled && !!outbox[`orders/${item.id}`]} eventName={eventName(item.eventId)} />}
     />
   );
 }

@@ -182,6 +182,7 @@ function Editor({ product }: { product: Product | undefined }) {
             />
             <Field
               label="In stock"
+              accessibilityLabel={`In stock${v.name ? `, ${v.name}` : ''}`}
               numeric
               value={v.stockText}
               onChangeText={(t) => setVariant(i, { stockText: t })}
