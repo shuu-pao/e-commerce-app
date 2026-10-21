@@ -1,17 +1,6 @@
-import { Text, View, StyleSheet } from "react-native";
+import { Redirect } from 'expo-router';
 
+/** The app always opens on Sell › All products, so people at the table never see the sales on Home. */
 export default function Index() {
-  return (
-    <View style={styles.container}>
-      <Text>Edit src/app/index.tsx to edit this screen.</Text>
-    </View>
-  );
+  return <Redirect href="/sell" />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
