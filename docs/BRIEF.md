@@ -21,8 +21,8 @@ new session won't know it, so record it here in the same turn.
   https://claude.ai/artifact/6YRqzABYuB7ggZm37rpgmA. v1 (phone screens)
   went to the client on 2026-10-17; v2 (2026-10-20) replaces it and
   follows the screen plan v2. Source:
-  `scratchpad/shop-mock/project/` in the session that made it; read the
-  canvas's files with the Artifact tool to edit it.
+  read the canvas's files with the Artifact tool (scratchpad copies
+  don't survive between sessions) and edit those.
 - **Question 3 is settled** (2026-10-19): no store apps. The app ships as
   an installable web app (below).
 - **Client questions page** (26 questions, tap to answer; the client
@@ -197,7 +197,7 @@ Selling, on the iPad at events:
    column on the right (41). One tap adds a product (39); if it has
    several colours, a small picker lists them with their stock, and a
    colour that ran out shows "Sold out" (8). The cart: one line per
-   product and colour, + and - and remove (14), Total order in pieces
+   product and colour, with its photo, + and - and remove (14), Total order in pieces
    (15), Total price, Check out. A badge shows orders not yet synced (28).
 2. **Checkout**: the event (38), a discount (none, 10%, a percent typed
    in, or a peso amount typed in), the payment method (Cash, GCash, QR
@@ -281,3 +281,4 @@ and the desktop it's a sidebar that stays open.
 | 2026-10-20 | Each order records its event, for totals per event (client, question 38) |
 | 2026-10-20 | Free web address; English only; the repo stays public (client, questions 31, 32, 35) |
 | 2026-10-20 | Paolo (the developer) maintains the app after launch (client, question 36) |
+| 2026-10-22 | Each cart line shows the product's photo (client, on mock v2). Which photo for a colour waits on question 6 |
