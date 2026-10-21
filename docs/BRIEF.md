@@ -36,7 +36,7 @@ new session won't know it, so record it here in the same turn.
 - **The screen plan v2 and the offline plan are approved** by the developer
   (2026-10-20). The mock was redrawn to match them (mock v2, same link):
   iPad landscape screens for selling, desktop pages for managing.
-- Next: the developer sends mock v2 and the six unclear answers (Open
+- Next: the developer sends the round 2 questions page (the 9 Open
   questions) to the client. Building can start on the parts those answers
   don't touch.
 
