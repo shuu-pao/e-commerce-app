@@ -67,7 +67,7 @@ export function CartPanel({ onCheckout }: { onCheckout?: () => void }) {
                   <Txt weight="bold" style={styles.num}>{formatPeso(lineTotal(l))}</Txt>
                 </View>
                 <View style={styles.controls}>
-                  <Step icon="remove" label={(l.qty === 1 ? 'Remove ' : 'Decrease ') + label} onPress={() => cartSetQty(l, l.qty - 1)} />
+                  <Step icon="remove" label={'Decrease ' + label} onPress={() => cartSetQty(l, l.qty - 1)} />
                   <Txt weight="bold" style={styles.qty} accessibilityLabel={`Quantity ${l.qty}`}>{l.qty}</Txt>
                   <Step icon="add" label={'Increase ' + label} disabled={atMax} onPress={() => cartSetQty(l, l.qty + 1)} />
                   <Txt variant="small" style={{ flex: 1, paddingLeft: 6 }}>{atMax ? 'No more in stock' : ''}</Txt>

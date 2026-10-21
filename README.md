@@ -1,56 +1,92 @@
-# Welcome to your Expo app 👋
+# caracebu
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+The cashier app for caracebu: sell at events on an iPad, add products on a computer,
+see orders and reports. It's an installable web app (no App Store), it keeps selling
+with no internet, and it syncs the iPad and the computer through Supabase's free plan.
 
-## Get started
+Decisions and the reasons behind them are in [docs/BRIEF.md](docs/BRIEF.md).
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Try it
 
 ```bash
-npm run reset-project
+npm install
+npm run web          # opens http://localhost:8081
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+Without Supabase keys the app runs on that one device: no sign-in, no sync. Tap
+**Try it with sample products** on the empty Sell screen to fill it with the products
+from the mock.
 
-### Other setup steps
+## Checks
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```bash
+npm test             # money, discounts, split payment, stock, reports, CSV
+npm run typecheck    # needs .expo/types: run `npx expo start` once first
+npx expo lint
+npm run build:web    # production build + service worker in dist/
+```
 
-## Learn more
+## Set up syncing (Supabase, free plan)
 
-To learn more about developing your project with Expo, look at the following resources:
+1. Create a project at [supabase.com](https://supabase.com) (free plan).
+2. **SQL Editor**: paste and run `supabase/migrations/20261022000000_records.sql`.
+3. **Authentication › Sign In / Providers**: turn off *Allow new users to sign up*.
+4. **Authentication › Users › Add user**: create the shop owner's email and password.
+   Copy the new user's ID, then in the SQL Editor run:
+   ```sql
+   insert into public.shop_owners (user_id) values ('PASTE-USER-ID-HERE');
+   ```
+   Only users in `shop_owners` can read or write the data.
+5. Copy `.env.example` to `.env` and fill in **Project Settings › API**: the project URL
+   and the **anon** key. Never the service_role key.
+6. Restart `npm run web`. The app now asks to sign in.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+**Keeping the free project awake.** Supabase pauses a free project after a week without
+use. `.github/workflows/keep-supabase-awake.yml` pings it every 3 days: add
+`SUPABASE_URL` and `SUPABASE_ANON_KEY` as repository secrets (Settings › Secrets ›
+Actions). GitHub stops schedules in a public repo after 60 days without commits; re-enable
+it from the Actions tab if that happens.
 
-## Join the community
+## Publish the website
 
-Join our community of developers creating universal apps.
+```bash
+npm run build:web
+npx eas-cli@latest deploy        # EAS Hosting (free plan); add --prod for the main address
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Any other static host works too if it sends every unknown path to `/index.html` (it's a
+single-page app). The `EXPO_PUBLIC_SUPABASE_*` values are baked in at build time, so set
+them in `.env` before `npm run build:web`.
+
+## Install on the iPad
+
+Open the site in **Safari**, tap **Share › Add to Home Screen**. It opens full screen
+with its own icon. Open it once on Wi-Fi before an event so it downloads everything.
+
+- Sales made offline are saved on the iPad and marked *Not synced*; they upload by
+  themselves when the internet is back. The sidebar shows how many are waiting.
+- Don't clear Safari's website data or delete the app while orders are waiting, and
+  sign-out is blocked until they've uploaded.
+- When a new version is published, the sidebar shows **A new version is ready · Reload**.
+
+## How it fits together
+
+```
+src/app/        screens (Expo Router): sell, checkout, orders, home, reports, products, categories, events
+src/domain/     pure logic with tests: money, totals, discounts, payments, stock, reports, CSV
+src/data/       store.ts (records + outbox, saved on the device), sync.ts (Supabase), storage.*.ts
+src/ui/         shared components and the design tokens from the mock
+supabase/       database schema and access rules
+public/         index.html (service worker registration), manifest, icons
+```
+
+- **Offline first.** Every change is saved on the device (IndexedDB on the web) and put
+  in an outbox. `sync.ts` uploads the outbox and downloads the other device's changes
+  whenever there's a connection. The newer change wins.
+- **Stock** is never stored as a number that two devices could overwrite. It's worked out
+  from stock changes (what the seller counted) minus what orders sold, so sales on an
+  offline iPad and edits on the computer add up correctly after syncing.
+- **Order numbers** continue from the highest known number. If two offline devices pick the
+  same number, the server gives the later upload the next free number.
+- **Photos** are cropped square and shrunk to 600 px on the device and stored inside the
+  product record, so they work offline with no storage bucket.

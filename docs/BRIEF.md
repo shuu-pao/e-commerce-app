@@ -6,9 +6,11 @@ new session won't know it, so record it here in the same turn.
 
 ## Status (2026-10-22)
 
-- The project was created from Expo's SDK 58 default template, and its
-  starter screens were cleared (`reset-project`). `src/app/` holds one blank
-  screen. No app screens have been built yet. Typecheck and web build pass.
+- **The app is built (version 1, 2026-10-22)** on branch `app-v1`, not yet
+  merged or pushed. Every screen of screen plan v2 works, offline selling
+  works, and tests, typecheck, lint, expo-doctor and the web build pass.
+  It runs on one device until Supabase is set up (README, "Set up syncing").
+  See "Build notes" below.
 - **The client answered the questions page** (round 1 on 2026-10-20,
   round 2 on 2026-10-22). Answers are under Decisions below. Question 28
   is answered: checkout must work offline,
@@ -19,8 +21,9 @@ new session won't know it, so record it here in the same turn.
   answers there).
 - **Mock** (clickable Design canvas):
   https://claude.ai/artifact/6YRqzABYuB7ggZm37rpgmA. v1 (phone screens)
-  went to the client on 2026-10-17; v2 (2026-10-20) replaces it and
-  follows the screen plan v2. Source:
+  went to the client on 2026-10-17; v2 (2026-10-20) replaced it; v3
+  (2026-10-22) adds every round 2 answer (shop name, cash change, split
+  payment, online buyer details, the Online event). Source:
   read the canvas's files with the Artifact tool (scratchpad copies
   don't survive between sessions) and edit those.
 - **Question 3 is settled** (2026-10-19): no store apps. The app ships as
@@ -40,9 +43,44 @@ new session won't know it, so record it here in the same turn.
   is called **caracebu**.
 - **Ownership: the app and its code belong to Paolo (the developer)**, not
   the client. Settled; don't ask about it again.
-- Next: build. The mock doesn't show the round 2 answers yet (shop name,
-  cash change, split payment, online order details, events on the iPad);
-  update it only if the developer asks.
+- Next: the developer reviews branch `app-v1`, creates the Supabase project
+  (README steps 1–6), publishes the site, and installs it on the client's
+  iPad. Nothing new to ask the client.
+
+## Build notes (version 1, 2026-10-22)
+
+How the code is laid out is in README.md ("How it fits together"). What a
+new session needs to know beyond that:
+
+- **Web output is `single`** (one-page app) so the service worker can serve
+  it offline; any host must send unknown paths to `/index.html`.
+  `npm run build:web` = `expo export` + Workbox (`workbox-config.cjs`). New
+  versions wait for the seller to tap Reload in the sidebar.
+- **Data**: every record is saved on the device first (IndexedDB on the
+  web, SQLite key-value on native) with an outbox; `src/data/sync.ts`
+  pushes through the `push_records` function and pulls rows newer than the
+  last server time it saw. Newer `updatedAt` wins.
+- **Stock** = sum of stock changes (`stock` records, what the seller
+  counted) minus pieces in non-deleted orders. No stored count, so offline
+  sales and desktop edits can't overwrite each other.
+- **Order numbers**: highest known + 1. If two offline devices clash, the
+  server renumbers the later upload.
+- **Photos**: cropped square, 600 px JPEG, stored as data URLs inside the
+  product record (works offline, no storage bucket). If the 500 MB
+  database ever gets close to full, move them to Supabase Storage.
+- **Access**: row-level security allows only users listed in
+  `shop_owners`; sign-ups should stay off. Only the anon key is in the app.
+- **Device-only mode**: with no `EXPO_PUBLIC_SUPABASE_*` values the app
+  runs without sign-in or sync, and offers sample products (from the mock).
+- **Typecheck** needs the generated route types: run `npx expo start` once
+  (it writes `.expo/types`), then `npm run typecheck`.
+- **Tests**: `npm test` runs `src/domain/*.test.ts` with Node's built-in
+  runner (Node 23.6+ runs TypeScript directly; domain files import each
+  other with `.ts` extensions for that reason).
+- **Not tested yet**: signing in and syncing against a real Supabase
+  project (needs the developer's project), and the app on a real iPad.
+- `npm audit` lists issues in Expo's build tooling (config plugins), not in
+  code that ships to the browser; they clear with Expo SDK updates.
 
 ## Who's who
 
@@ -294,3 +332,7 @@ and the desktop it's a sidebar that stays open.
 | 2026-10-22 | Photos: one per product, plus one per colour (client, question 6) |
 | 2026-10-22 | Reports set confirmed: per day, week, month, event or chosen dates, best sellers, payment methods, Excel download (client, questions 12 and 23) |
 | 2026-10-22 | Only Home hides amounts; All orders and Reports show them (client) |
+| 2026-10-22 | Web output `single`; offline through a Workbox service worker; updates wait for Reload (build) |
+| 2026-10-22 | Stock is a ledger (stock changes minus sold pieces), not a stored number, so two devices can't overwrite each other (build) |
+| 2026-10-22 | Photos stored in the product record as small square JPEGs (build) |
+| 2026-10-22 | Only users in `shop_owners` can read or write; sign-ups off (build) |

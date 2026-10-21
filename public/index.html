@@ -33,8 +33,12 @@
       // A new version waits until the seller taps Reload in the sidebar, so a sale is never interrupted.
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () {
-          navigator.serviceWorker
-            .register('/sw.js')
+          // Only builds made with `npm run build:web` have sw.js; the dev server answers with the page instead.
+          fetch('/sw.js', { method: 'HEAD', cache: 'no-store' })
+            .then(function (res) {
+              if (!res.ok || !/javascript/.test(res.headers.get('content-type') || '')) throw new Error('no service worker');
+              return navigator.serviceWorker.register('/sw.js');
+            })
             .then(function (reg) {
               function ready() {
                 window.__updateReady = true;
