@@ -94,6 +94,15 @@ Unclear answers from 2026-10-20, to take back to the client:
   colours yet.
 - **36. Code ownership.** Paolo (the developer) looks after the app. Who
   owns the code wasn't answered.
+- **Hiding amounts** (from mock v2 feedback, 2026-10-22). Home hides peso
+  amounts until tapped; should All orders and Reports too?
+- **Cash and change.** Ask how much cash the buyer gave and show the
+  change, as Loyverse does?
+- **Split payment.** Part cash, part GCash on one order?
+
+This is the complete list (2026-10-22). The developer asks the client all
+of it at once, so don't raise new client questions one at a time: add
+them here and batch them.
 
 ## Offline plan (approved 2026-10-20)
 
