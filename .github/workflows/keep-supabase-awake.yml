@@ -21,4 +21,5 @@ jobs:
     steps:
       - name: Ping the database
         if: ${{ env.SUPABASE_URL != '' }}
-        run: curl -fsS "$SUPABASE_URL/rest/v1/records?select=id&limit=1" -H "apikey: $SUPABASE_ANON_KEY" -o /dev/null
+        run: |
+          curl -fsS "$SUPABASE_URL/rest/v1/records?select=id&limit=1" -H "apikey: $SUPABASE_ANON_KEY" -o /dev/null
