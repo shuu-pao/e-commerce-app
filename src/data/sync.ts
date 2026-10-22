@@ -178,6 +178,46 @@ export async function signIn(email: string, password: string): Promise<string | 
   return null;
 }
 
+/** Emails a link that opens the app on "Set your password". */
+export async function sendPasswordReset(email: string): Promise<string | null> {
+  if (!supabase) return null;
+  const redirectTo = Platform.OS === 'web' && typeof window !== 'undefined' ? window.location.origin : undefined;
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
+  if (!error) return null;
+  if (isNetworkError(error)) return 'No internet. Try again when you are online.';
+  if (/rate|seconds|too many/i.test(error.message)) return 'Too many emails were sent just now. Wait a few minutes, then try again.';
+  return error.message;
+}
+
+/** True when this device holds a login session (for example, right after opening an emailed link). */
+export async function hasSession(): Promise<boolean> {
+  if (!supabase) return false;
+  const { data } = await supabase.auth.getSession();
+  return !!data.session;
+}
+
+/**
+ * Sets a new password for whoever is signed in: after an invitation or reset link, or from
+ * "Change password". Finishes signing this device in if it wasn't already.
+ */
+export async function setNewPassword(password: string): Promise<string | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    if (isNetworkError(error)) return 'No internet. Changing the password needs a connection.';
+    if (/different/i.test(error.message)) return 'That is the current password. Choose a new one.';
+    if (/session|jwt|auth/i.test(error.message)) return 'This link has expired. Ask for a new one.';
+    return error.message;
+  }
+  const email = data.user?.email ?? null;
+  if (email && store.getState().settings.signedInEmail !== email) {
+    store.updateSettings({ signedInEmail: email, lastPulledAt: null });
+    store.queueEverything();
+  }
+  void syncNow();
+  return null;
+}
+
 /** Refuses while orders still wait to upload, so nothing sold is lost. */
 export async function signOut(): Promise<string | null> {
   if (!supabase) return null;

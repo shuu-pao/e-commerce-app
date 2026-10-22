@@ -1,7 +1,7 @@
 import type { DrawerContentComponentProps } from 'expo-router/drawer';
 import { router, useGlobalSearchParams, usePathname, type Href } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useAppState, useLive } from '@/data/hooks';
@@ -10,6 +10,7 @@ import { signOut, syncEnabled, syncNow } from '@/data/sync';
 
 import { Button } from './Button';
 import { ConfirmDialog } from './ConfirmDialog';
+import { PasswordForm } from './PasswordForm';
 import { colors, fonts, radius } from './theme';
 import { Txt } from './Txt';
 
@@ -79,6 +80,8 @@ function SyncBox() {
   const saveError = useAppState((s) => s.saveError);
   const [confirm, setConfirm] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(null);
+  const [changing, setChanging] = useState(false);
+  const [changed, setChanged] = useState(false);
 
   let tone: 'ok' | 'warn' | 'plain' = 'plain';
   let title = 'On this device only';
@@ -132,6 +135,33 @@ function SyncBox() {
           <Button label="Sign out" variant="ghost" onPress={() => setConfirm(true)} />
         </View>
       ) : null}
+      {syncEnabled && email ? (
+        <Button label="Change password" variant="ghost" onPress={() => setChanging(true)} style={styles.changePw} />
+      ) : null}
+      <Modal visible={changing} transparent animationType="fade" onRequestClose={() => setChanging(false)}>
+        <View style={styles.scrim}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setChanging(false)} accessibilityLabel="Close" />
+          <View style={styles.dialog} accessibilityViewIsModal>
+            <Txt variant="heading">Change password</Txt>
+            <PasswordForm
+              submitLabel="Save new password"
+              onDone={() => {
+                setChanging(false);
+                setChanged(true);
+              }}
+            />
+            <Button label="Cancel" variant="ghost" onPress={() => setChanging(false)} />
+          </View>
+        </View>
+      </Modal>
+      <ConfirmDialog
+        visible={changed}
+        title="Password changed"
+        message="Use the new password the next time you sign in, on every device."
+        confirmLabel="OK"
+        onCancel={() => setChanged(false)}
+        onConfirm={() => setChanged(false)}
+      />
       <ConfirmDialog
         visible={confirm}
         title="Sign out of this device?"
@@ -199,4 +229,7 @@ const styles = StyleSheet.create({
   syncText: { fontSize: 13, lineHeight: 18 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   account: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingLeft: 4 },
+  changePw: { alignSelf: 'flex-start', marginTop: -6 },
+  scrim: { flex: 1, backgroundColor: colors.scrim, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  dialog: { width: '100%', maxWidth: 420, gap: 12, padding: 24, borderRadius: radius.lg + 2, backgroundColor: colors.white },
 });

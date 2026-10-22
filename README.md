@@ -40,13 +40,25 @@ npm run build:web    # production build + service worker in dist/
 2. **SQL Editor › New query**: paste all of `supabase/migrations/20261022000000_records.sql`,
    **Run**. Expect "Success. No rows returned".
 3. **Authentication › Sign In / Providers**: turn off **Allow new users to sign up**, Save.
-4. **Authentication › Users › Add user › Create new user**: the shop owner's email and a
-   password, tick **Auto Confirm User**, **Create user**. Open the new user, copy its
-   **User UID**, then in the SQL Editor run:
-   ```sql
-   insert into public.shop_owners (user_id) values ('PASTE-USER-UID-HERE');
-   ```
-   Only users in `shop_owners` can read or write the data.
+4. Create the owner's login **by invitation**, so only the client knows the password. Do it
+   after publishing (see "Publish the website"), because the email links to the live site:
+   - **Authentication › URL Configuration**: Site URL `https://caracebu.expo.app` (your
+     published address). Under Redirect URLs add the same address, plus
+     `http://localhost:8081` for testing on your computer. Save.
+   - **Authentication › Users › Add user › Send invitation**: the client's email, **Invite**.
+   - Copy the new user's **User UID** (it's listed right away), then in the SQL Editor run:
+     ```sql
+     insert into public.shop_owners (user_id) values ('PASTE-USER-UID-HERE');
+     ```
+     Only users in `shop_owners` can read or write the data.
+   - The client opens the email and taps the link: the app shows **Welcome! Choose your
+     password**. After that they sign in with their email and that password.
+   - For your own testing, **Add user › Create new user** (tick **Auto Confirm User**) with
+     your email works the same way; add that UID to `shop_owners` too, and delete the test
+     user before handing over.
+   - Forgotten password: **Forgot password?** on the sign-in screen emails a reset link.
+     Signed in, **Change password** is in the sidebar. The free plan sends only a few auth
+     emails per hour.
 5. Copy `.env.example` to `.env`. From the project's **Connect** dialog (or **Project
    Settings › API Keys**) copy the **Project URL** into `EXPO_PUBLIC_SUPABASE_URL` and the
    **publishable** key (`sb_publishable_…`; the legacy `anon` key also works) into

@@ -11,7 +11,9 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { useAppState } from '@/data/hooks';
 import { loadFromDevice } from '@/data/store';
+import { authLinkAtStart, forgetAuthLink } from '@/data/supabase';
 import { startSync, syncEnabled } from '@/data/sync';
+import { SetPassword } from '@/ui/SetPassword';
 import { Sidebar } from '@/ui/Sidebar';
 import { SignIn } from '@/ui/SignIn';
 import { colors, fonts, WIDE } from '@/ui/theme';
@@ -53,7 +55,16 @@ export default function RootLayout() {
 
 function Gate() {
   const email = useAppState((s) => s.settings.signedInEmail);
+  // Opened from an invitation or password-reset email: choose a password first.
+  const [link, setLink] = useState(authLinkAtStart);
   useEffect(() => (email ? startSync() : undefined), [email]);
+  if (syncEnabled && link) {
+    const done = () => {
+      forgetAuthLink();
+      setLink(null);
+    };
+    return <SetPassword link={link} onDone={done} />;
+  }
   if (syncEnabled && !email) return <SignIn />;
   return <AppDrawer />;
 }

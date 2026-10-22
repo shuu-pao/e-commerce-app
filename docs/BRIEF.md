@@ -70,6 +70,12 @@ new session needs to know beyond that:
   database ever gets close to full, move them to Supabase Storage.
 - **Access**: row-level security allows only users listed in
   `shop_owners`; sign-ups should stay off. Only the anon key is in the app.
+- **Logins**: no sign-up screen. The owner joins by a Supabase invitation
+  email; the link opens the app on "Choose your password" (`src/ui/SetPassword.tsx`,
+  web only, implicit flow, the link type is read from the address before
+  supabase-js consumes it). "Forgot password?" on sign-in and "Change
+  password" in the sidebar use the same form. Supabase's Site URL must be the
+  published address.
 - **Device-only mode**: with no `EXPO_PUBLIC_SUPABASE_*` values the app
   runs without sign-in or sync, and offers sample products (from the mock).
 - **Typecheck** needs the generated route types: run `npx expo start` once
@@ -346,3 +352,4 @@ and the desktop it's a sidebar that stays open.
 | 2026-10-22 | Stock is a ledger (stock changes minus sold pieces), not a stored number, so two devices can't overwrite each other (build) |
 | 2026-10-22 | Photos stored in the product record as small square JPEGs (build) |
 | 2026-10-22 | Only users in `shop_owners` can read or write; sign-ups off (build) |
+| 2026-10-22 | The owner joins by invitation and sets their own password; forgot and change password in the app; no public sign-up (developer) |
