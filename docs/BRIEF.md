@@ -6,8 +6,8 @@ new session won't know it, so record it here in the same turn.
 
 ## Status (2026-10-22)
 
-- **The app is built (version 1, 2026-10-22)** on branch `app-v1`, not yet
-  merged or pushed. Every screen of screen plan v2 works, offline selling
+- **The app is built (version 1, 2026-10-22)** and merged into `main`
+  (pushed to GitHub). Every screen of screen plan v2 works, offline selling
   works, and tests, typecheck, lint, expo-doctor and the web build pass.
   It runs on one device until Supabase is set up (README, "Set up syncing").
   See "Build notes" below.
@@ -43,7 +43,7 @@ new session won't know it, so record it here in the same turn.
   is called **caracebu**.
 - **Ownership: the app and its code belong to Paolo (the developer)**, not
   the client. Settled; don't ask about it again.
-- Next: the developer reviews branch `app-v1`, creates the Supabase project
+- Next: the developer creates the Supabase project
   (README steps 1–6), publishes the site, and installs it on the client's
   iPad. Nothing new to ask the client.
 
