@@ -49,7 +49,7 @@ new session won't know it, so record it here in the same turn.
   `shop_owners`. Redeploy after changes: `npm run build:web`, then
   `npx eas-cli@latest deploy --prod`.
 - Next: Supabase Site URL and redirect URLs, invite the client, install on
-  the iPad, add the two GitHub secrets for the keep-awake ping (README).
+  the iPad (README). The keep-awake ping works (GitHub secrets set, tested 2026-10-22).
   Nothing new to ask the client.
 
 ## Build notes (version 1, 2026-10-22)
