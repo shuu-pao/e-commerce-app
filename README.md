@@ -29,18 +29,30 @@ npm run build:web    # production build + service worker in dist/
 
 ## Set up syncing (Supabase, free plan)
 
-1. Create a project at [supabase.com](https://supabase.com) (free plan).
-2. **SQL Editor**: paste and run `supabase/migrations/20261022000000_records.sql`.
-3. **Authentication › Sign In / Providers**: turn off *Allow new users to sign up*.
-4. **Authentication › Users › Add user**: create the shop owner's email and password.
-   Copy the new user's ID, then in the SQL Editor run:
+1. At [supabase.com/dashboard](https://supabase.com/dashboard), **New project**:
+   - Organization: your personal one (Free plan)
+   - Project name: `caracebu`
+   - Database password: **Generate a password**, save it in your password manager (the app
+     never uses it; you'd need it only to connect a database tool)
+   - Region: **Southeast Asia (Singapore)**, the closest to Cebu
+   - Security options: keep the **Data API** turned on (the app talks to it)
+   - **Create new project**, then wait a couple of minutes.
+2. **SQL Editor › New query**: paste all of `supabase/migrations/20261022000000_records.sql`,
+   **Run**. Expect "Success. No rows returned".
+3. **Authentication › Sign In / Providers**: turn off **Allow new users to sign up**, Save.
+4. **Authentication › Users › Add user › Create new user**: the shop owner's email and a
+   password, tick **Auto Confirm User**, **Create user**. Open the new user, copy its
+   **User UID**, then in the SQL Editor run:
    ```sql
-   insert into public.shop_owners (user_id) values ('PASTE-USER-ID-HERE');
+   insert into public.shop_owners (user_id) values ('PASTE-USER-UID-HERE');
    ```
    Only users in `shop_owners` can read or write the data.
-5. Copy `.env.example` to `.env` and fill in **Project Settings › API**: the project URL
-   and the **anon** key. Never the service_role key.
-6. Restart `npm run web`. The app now asks to sign in.
+5. Copy `.env.example` to `.env`. From the project's **Connect** dialog (or **Project
+   Settings › API Keys**) copy the **Project URL** into `EXPO_PUBLIC_SUPABASE_URL` and the
+   **publishable** key (`sb_publishable_…`; the legacy `anon` key also works) into
+   `EXPO_PUBLIC_SUPABASE_ANON_KEY`. Never the secret / service_role key.
+6. Restart `npm run web`. The app now asks to sign in; after signing in the sidebar shows
+   **Online · Everything is synced**.
 
 **Keeping the free project awake.** Supabase pauses a free project after a week without
 use. `.github/workflows/keep-supabase-awake.yml` pings it every 3 days: add
@@ -61,8 +73,10 @@ them in `.env` before `npm run build:web`.
 
 ## Install on the iPad
 
-Open the site in **Safari**, tap **Share › Add to Home Screen**. It opens full screen
-with its own icon. Open it once on Wi-Fi before an event so it downloads everything.
+Open the site in **Safari**, tap **Share › Add to Home Screen › Add**. Then open it **from
+the new icon** and sign in there: on iPad the Home Screen app keeps its own storage, separate
+from Safari, so signing in inside Safari doesn't carry over. Open it once on Wi-Fi before an
+event so it downloads everything.
 
 - Sales made offline are saved on the iPad and marked *Not synced*; they upload by
   themselves when the internet is back. The sidebar shows how many are waiting.
