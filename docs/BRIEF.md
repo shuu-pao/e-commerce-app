@@ -96,14 +96,28 @@ new session needs to know beyond that:
   (`src/domain/merge.ts`). `npm run test:db` runs the Supabase migration in
   real Postgres (PGlite) and checks access rules, newest-wins uploads and
   order renumbering.
-- **Not tested yet**: signing in and syncing against a real Supabase
-  project (needs the developer's project; the SQL and the merge rules are
-  tested separately), and the app on a real iPad (tested in Chromium at
-  iPad landscape, iPad portrait and phone sizes, plus offline with the
-  server stopped).
+- **Tested against the live Supabase project** (2026-10-22): sign-in and
+  the first sync (about 2 s on slow 4G). **Not tested yet**: the app on a
+  real iPad (tested in Chromium at iPad landscape, iPad portrait and phone
+  sizes, plus offline with the server stopped).
 - Device clocks: newest-wins trusts each device's clock. The server
   renumber always stamps newer than the upload, and a device never stamps a
   record older than its last change.
+- **Loading** (measured 2026-10-22, first visit, empty cache): the page
+  paints a skeleton of the Sell screen from `public/index.html` before any
+  JavaScript (0.4 s even on 3G, was a white screen for 1.2 s on Wi-Fi and
+  7 s on 3G); `_layout.tsx` fades it out once the app is ready. Later
+  visits open from the service worker in under a second. A device's first
+  download after sign-in shows skeleton cards/rows (`src/ui/Skeleton.tsx`).
+  Async routes are off (`app.json`): every screen ships in one bundle, so
+  moving between screens never waits on the network (about 50 ms on slow
+  4G). Icons come from a 3 KB subset font (`scripts/icons.py`) instead of
+  the 390 KB Ionicons font.
+- **Monkey testing** (2026-10-22): 2,500 random actions in device-only
+  mode (taps, junk input, back, reload, resizing). No crashes, console
+  errors or blank screens; one bug found and fixed ("undefined" flashing in
+  fading delete dialogs). Script: `scripts/monkey.js` (how to run it is at
+  its top); always against a device-only dev server, never the live data.
 - `npm audit` lists issues in Expo's build tooling (config plugins), not in
   code that ships to the browser; they clear with Expo SDK updates.
 

@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Icon } from '@/ui/Icon';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import { useState } from 'react';
@@ -150,7 +150,7 @@ function Editor({ product }: { product: Product | undefined }) {
                   onPress={() => setCategoryIds(on ? categoryIds.filter((x) => x !== c.id) : [...categoryIds, c.id])}
                   style={[styles.chip, on && styles.chipOn]}
                 >
-                  <Ionicons name={on ? 'checkmark' : 'add'} size={16} color={on ? colors.accent : colors.ink} />
+                  <Icon name={on ? 'checkmark' : 'add'} size={16} color={on ? colors.accent : colors.ink} />
                   <Txt style={[styles.chipText, on && { color: colors.accent }]}>{c.name}</Txt>
                 </Pressable>
               );
@@ -192,7 +192,7 @@ function Editor({ product }: { product: Product | undefined }) {
             />
             {multi ? (
               <Pressable accessibilityRole="button" accessibilityLabel={`Remove ${v.name || 'this colour'}`} onPress={() => setVariants(variants.filter((_, j) => j !== i))} style={styles.removeBtn}>
-                <Ionicons name="close" size={20} color={colors.muted} />
+                <Icon name="close" size={20} color={colors.muted} />
               </Pressable>
             ) : null}
           </View>

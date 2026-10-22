@@ -103,6 +103,7 @@ src/app/        screens (Expo Router): sell, checkout, orders, home, reports, pr
 src/domain/     pure logic with tests: money, totals, discounts, payments, stock, reports, CSV
 src/data/       store.ts (records + outbox, saved on the device), sync.ts (Supabase), storage.*.ts
 src/ui/         shared components and the design tokens from the mock
+scripts/        icons.py: rebuilds the 3 KB icon font (add an Ionicons name, run it)
 supabase/       database schema and access rules
 public/         index.html (service worker registration), manifest, icons
 ```

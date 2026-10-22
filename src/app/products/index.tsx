@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Icon } from '@/ui/Icon';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
@@ -9,6 +9,7 @@ import { loadSampleData, sampleDataAllowed } from '@/data/sample';
 import { Button } from '@/ui/Button';
 import { Photo } from '@/ui/Photo';
 import { Empty } from '@/ui/Screen';
+import { RowsSkeleton, useFirstDownload } from '@/ui/Skeleton';
 import { colors, fonts, radius, touch } from '@/ui/theme';
 import { Txt } from '@/ui/Txt';
 
@@ -17,6 +18,7 @@ export default function Products() {
   const categories = useAppState((s) => s.db.categories);
   const stock = useStockLeft();
   const [query, setQuery] = useState('');
+  const firstDownload = useFirstDownload();
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -33,14 +35,16 @@ export default function Products() {
       ListHeaderComponent={
         <View style={styles.head}>
           <View style={styles.search}>
-            <Ionicons name="search" size={18} color={colors.muted} />
+            <Icon name="search" size={18} color={colors.muted} />
             <TextInput value={query} onChangeText={setQuery} placeholder="Search products" placeholderTextColor={colors.muted} accessibilityLabel="Search products" style={styles.searchInput} />
           </View>
           <Button label="Add product" icon="add" onPress={() => router.push('/products/new')} />
         </View>
       }
       ListEmptyComponent={
-        products.length ? (
+        firstDownload ? (
+          <RowsSkeleton />
+        ) : products.length ? (
           <Empty title="Nothing matches" message={`No products match "${query}".`} />
         ) : (
           <Empty title="No products yet" message="Add each product with its photo, price, categories and the stock for each colour.">

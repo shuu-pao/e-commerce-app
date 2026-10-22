@@ -27,6 +27,31 @@
         height: 100%;
         flex: 1;
       }
+      /* Loading skeleton: painted straight from this file, before any JavaScript arrives.
+         The app removes it once it has loaded (src/app/_layout.tsx). Shapes follow the Sell screen. */
+      #boot {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        display: flex;
+        background: #fff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        transition: opacity 0.2s ease;
+      }
+      #boot.done { opacity: 0; pointer-events: none; }
+      #boot .b { background: #ece7e5; border-radius: 10px; animation: boot-pulse 1.3s ease-in-out infinite; }
+      #boot aside { width: 260px; flex-shrink: 0; background: #faf8f7; padding: 22px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px; }
+      #boot .brand { font-size: 19px; font-weight: 700; color: #1f1a1c; padding: 0 4px 6px; }
+      #boot main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+      #boot header { height: 56px; border-bottom: 1px solid #ece7e5; display: flex; align-items: center; padding: 0 20px; }
+      #boot .search { height: 44px; border-radius: 22px; margin: 16px 20px 12px; }
+      #boot .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px; padding: 12px 20px; }
+      #boot .card { aspect-ratio: 1; }
+      #boot .cart { width: 360px; flex-shrink: 0; border-left: 1px solid #ece7e5; display: flex; flex-direction: column; justify-content: flex-end; padding: 20px; box-sizing: border-box; gap: 12px; }
+      @media (max-width: 1023px) { #boot aside { display: none; } }
+      @media (max-width: 759px) { #boot .cart { display: none; } }
+      @keyframes boot-pulse { 50% { opacity: 0.45; } }
+      @media (prefers-reduced-motion: reduce) { #boot .b { animation: none; } }
     </style>
     <script>
       // Offline support: sw.js (made by Workbox at build time) keeps the app on the device.
@@ -75,5 +100,26 @@
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
+    <div id="boot" aria-busy="true" aria-label="Loading caracebu">
+      <aside>
+        <div class="brand">caracebu</div>
+        <div class="b" style="height: 18px; width: 70%"></div>
+        <div class="b" style="height: 18px; width: 55%"></div>
+        <div class="b" style="height: 18px; width: 62%"></div>
+        <div class="b" style="height: 18px; width: 48%"></div>
+      </aside>
+      <main>
+        <header><div class="b" style="height: 20px; width: 140px"></div></header>
+        <div class="b search"></div>
+        <div class="grid">
+          <div class="b card"></div><div class="b card"></div><div class="b card"></div>
+          <div class="b card"></div><div class="b card"></div><div class="b card"></div>
+        </div>
+      </main>
+      <div class="cart">
+        <div class="b" style="height: 22px; width: 50%"></div>
+        <div class="b" style="height: 52px; border-radius: 26px"></div>
+      </div>
+    </div>
   </body>
 </html>

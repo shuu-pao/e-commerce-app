@@ -16,6 +16,7 @@ import { Button } from '@/ui/Button';
 import { Choice } from '@/ui/Choice';
 import { DateField } from '@/ui/DateField';
 import { Empty } from '@/ui/Screen';
+import { RowsSkeleton, useFirstDownload } from '@/ui/Skeleton';
 import { colors, radius, WIDE } from '@/ui/theme';
 import { Txt } from '@/ui/Txt';
 
@@ -29,6 +30,7 @@ export default function Orders() {
   const [to, setTo] = useState(today);
   const [eventId, setEventId] = useState<string>('all');
   const [notice, setNotice] = useState<string | null>(null);
+  const firstDownload = useFirstDownload();
   const { width } = useWindowDimensions();
   const table = (width >= WIDE ? width - 260 : width) >= 760;
 
@@ -78,7 +80,7 @@ export default function Orders() {
           ) : null}
         </View>
       }
-      ListEmptyComponent={<Empty title="No orders" message="No orders match these dates and event." />}
+      ListEmptyComponent={firstDownload ? <RowsSkeleton /> : <Empty title="No orders" message="No orders match these dates and event." />}
       renderItem={({ item }) => <OrderRow order={item} table={table} unsynced={syncEnabled && !!outbox[`orders/${item.id}`]} eventName={eventName(item.eventId)} />}
     />
   );

@@ -1,11 +1,8 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import type { ComponentProps } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 
+import { Icon, type IconName } from './Icon';
 import { colors, fonts, radius, touch } from './theme';
 import { Txt } from './Txt';
-
-type IconName = ComponentProps<typeof Ionicons>['name'];
 
 interface Props {
   label: string;
@@ -38,7 +35,7 @@ export function Button({ label, onPress, variant = 'primary', size = 'md', icon,
         style,
       ]}
     >
-      {busy ? <ActivityIndicator color={fg} /> : icon ? <Ionicons name={icon} size={18} color={fg} /> : null}
+      {busy ? <ActivityIndicator color={fg} /> : icon ? <Icon name={icon} size={18} color={fg} /> : null}
       <Txt style={[styles.label, size === 'lg' && styles.labelLg, { color: fg }]}>{label}</Txt>
     </Pressable>
   );

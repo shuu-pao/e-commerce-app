@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Icon } from '@/ui/Icon';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import { useState } from 'react';
@@ -50,7 +50,7 @@ export default function OrderSummary() {
       {placed ? (
         <View style={styles.placed}>
           <View style={styles.check}>
-            <Ionicons name="checkmark" size={34} color={colors.accent} />
+            <Icon name="checkmark" size={34} color={colors.accent} />
           </View>
           <Txt variant="title">Order placed</Txt>
         </View>

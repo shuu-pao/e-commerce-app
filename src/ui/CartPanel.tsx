@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Icon } from './Icon';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
@@ -72,7 +72,7 @@ export function CartPanel({ onCheckout }: { onCheckout?: () => void }) {
                   <Step icon="add" label={'Increase ' + label} disabled={atMax} onPress={() => cartSetQty(l, l.qty + 1)} />
                   <Txt variant="small" style={{ flex: 1, paddingLeft: 6 }}>{atMax ? 'No more in stock' : ''}</Txt>
                   <Pressable accessibilityRole="button" accessibilityLabel={'Remove ' + label} onPress={() => cartSetQty(l, 0)} style={styles.remove}>
-                    <Ionicons name="close" size={20} color={colors.muted} />
+                    <Icon name="close" size={20} color={colors.muted} />
                   </Pressable>
                 </View>
               </View>
@@ -126,7 +126,7 @@ function Step({ icon, label, disabled, onPress }: { icon: 'add' | 'remove'; labe
       onPress={onPress}
       style={({ hovered }) => [styles.step, hovered && !disabled && { borderColor: colors.accent }, disabled && { opacity: 0.35 }]}
     >
-      <Ionicons name={icon} size={18} color={colors.ink} />
+      <Icon name={icon} size={18} color={colors.ink} />
     </Pressable>
   );
 }

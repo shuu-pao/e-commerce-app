@@ -95,7 +95,9 @@ async function pull() {
     }
     if (data.length < PAGE) break;
   }
-  if (newest !== cursor) store.updateSettings({ lastPulledAt: newest });
+  // An empty first download still counts as done (the epoch means "nothing newer seen yet").
+  const done = newest ?? '1970-01-01T00:00:00.000Z';
+  if (done !== cursor) store.updateSettings({ lastPulledAt: done });
 }
 
 export async function syncNow(): Promise<void> {

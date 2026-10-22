@@ -27,7 +27,12 @@
       "themeColor": "#FFFFFF"
     },
     "plugins": [
-      "expo-router",
+      [
+        "expo-router",
+        {
+          "asyncRoutes": false
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -37,18 +42,14 @@
         }
       ],
       "expo-sqlite",
-      "expo-image"
+      "expo-image",
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
     "extra": {
-      "router": {
-        "asyncRoutes": {
-          "web": true
-        }
-      },
       "eas": {
         "projectId": "e473654f-7eea-4415-bf97-c365ef3de33d"
       }

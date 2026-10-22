@@ -1,4 +1,4 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Icon } from '@/ui/Icon';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import { useMemo, useState } from 'react';
@@ -15,6 +15,7 @@ import { Button } from '@/ui/Button';
 import { CartPanel } from '@/ui/CartPanel';
 import { Photo } from '@/ui/Photo';
 import { Empty } from '@/ui/Screen';
+import { GridSkeleton, useFirstDownload } from '@/ui/Skeleton';
 import { colors, fonts, radius, touch, WIDE } from '@/ui/theme';
 import { Txt } from '@/ui/Txt';
 
@@ -32,6 +33,7 @@ export default function Sell() {
   const [cartOpen, setCartOpen] = useState(false);
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const firstDownload = useFirstDownload();
 
   const contentWidth = width >= WIDE ? width - 260 : width;
   const cartBeside = contentWidth >= 760;
@@ -66,7 +68,7 @@ export default function Sell() {
         <View style={styles.top}>
           <EventLine />
           <View style={styles.search}>
-            <Ionicons name="search" size={18} color={colors.muted} />
+            <Icon name="search" size={18} color={colors.muted} />
             <TextInput
               value={query}
               onChangeText={setQuery}
@@ -78,13 +80,15 @@ export default function Sell() {
             />
             {query ? (
               <Pressable accessibilityRole="button" accessibilityLabel="Clear search" onPress={() => setQuery('')} style={styles.clear}>
-                <Ionicons name="close-circle" size={20} color={colors.muted} />
+                <Icon name="close-circle" size={20} color={colors.muted} />
               </Pressable>
             ) : null}
           </View>
         </View>
 
-        {products.length === 0 ? (
+        {products.length === 0 && firstDownload ? (
+          <GridSkeleton columns={columns} />
+        ) : products.length === 0 ? (
           <Empty title="No products yet" message="Add your products on the computer or here, with a photo, price and the stock for each colour.">
             <Button label="Add a product" onPress={() => router.push('/products/new')} />
             {sampleDataAllowed() ? <Button label="Try it with sample products" variant="ghost" onPress={loadSampleData} /> : null}

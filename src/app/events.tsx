@@ -113,7 +113,7 @@ export default function Events() {
 
       <ConfirmDialog
         visible={!!removing}
-        title={`Delete ${removing?.name}?`}
+        title={removing ? `Delete ${removing.name}?` : 'Delete event?'}
         message="It has no orders, so nothing else changes."
         confirmLabel="Delete"
         onCancel={() => setRemoving(null)}

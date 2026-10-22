@@ -7,7 +7,7 @@ import { Drawer } from 'expo-router/drawer';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Platform, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { useAppState } from '@/data/hooks';
 import { loadFromDevice } from '@/data/store';
@@ -32,7 +32,14 @@ export default function RootLayout() {
 
   const show = (fontsLoaded || !!fontError) && (ready || !!loadError);
   useEffect(() => {
-    if (show) void SplashScreen.hideAsync();
+    if (!show) return;
+    void SplashScreen.hideAsync();
+    // The web page paints a skeleton before JavaScript loads (public/index.html); fade it out now.
+    const boot = Platform.OS === 'web' ? document.getElementById('boot') : null;
+    if (boot) {
+      boot.classList.add('done');
+      setTimeout(() => boot.remove(), 250);
+    }
   }, [show]);
 
   if (!show) return null;

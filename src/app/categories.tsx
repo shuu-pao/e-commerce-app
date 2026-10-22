@@ -72,7 +72,7 @@ export default function Categories() {
 
       <ConfirmDialog
         visible={!!removing}
-        title={`Remove ${removing?.name}?`}
+        title={removing ? `Remove ${removing.name}?` : 'Remove category?'}
         message="Its products stay in All products and in their other categories."
         confirmLabel="Remove"
         onCancel={() => setRemoving(null)}
