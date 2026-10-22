@@ -43,9 +43,14 @@ new session won't know it, so record it here in the same turn.
   is called **caracebu**.
 - **Ownership: the app and its code belong to Paolo (the developer)**, not
   the client. Settled; don't ask about it again.
-- Next: the developer creates the Supabase project
-  (README steps 1–6), publishes the site, and installs it on the client's
-  iPad. Nothing new to ask the client.
+- **Live** (2026-10-22): https://caracebu.expo.app (EAS Hosting, project
+  `e473654f-7eea-4415-bf97-c365ef3de33d`). Supabase project set up and
+  syncing (`vcbdnggmzbtpqnldrxjl`); the developer's test login is in
+  `shop_owners`. Redeploy after changes: `npm run build:web`, then
+  `npx eas-cli@latest deploy --prod`.
+- Next: Supabase Site URL and redirect URLs, invite the client, install on
+  the iPad, add the two GitHub secrets for the keep-awake ping (README).
+  Nothing new to ask the client.
 
 ## Build notes (version 1, 2026-10-22)
 
