@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import type { AuthLink } from '@/data/supabase';
-import { hasSession } from '@/data/sync';
+import { checkLinkSession } from '@/data/sync';
 
 import { Button } from './Button';
 import { PasswordForm } from './PasswordForm';
@@ -11,12 +11,12 @@ import { Txt } from './Txt';
 
 /** Opens from an emailed invitation or password-reset link. */
 export function SetPassword({ link, onDone }: { link: NonNullable<AuthLink>; onDone: () => void }) {
-  const [state, setState] = useState<'checking' | 'ready' | 'expired'>(link.kind === 'error' ? 'expired' : 'checking');
+  const [state, setState] = useState<'checking' | 'ready' | 'expired' | 'otherAccount'>(link.kind === 'error' ? 'expired' : 'checking');
 
   useEffect(() => {
     if (link.kind === 'error') return;
     let live = true;
-    void hasSession().then((ok) => live && setState(ok ? 'ready' : 'expired'));
+    void checkLinkSession().then((r) => live && setState(r === 'ok' ? 'ready' : r === 'none' ? 'expired' : 'otherAccount'));
     return () => {
       live = false;
     };
@@ -29,12 +29,21 @@ export function SetPassword({ link, onDone }: { link: NonNullable<AuthLink>; onD
         <Txt variant="title">caracebu</Txt>
         {state === 'checking' ? (
           <ActivityIndicator color={colors.accent} />
+        ) : state === 'otherAccount' ? (
+          <>
+            <Txt variant="heading">This link is for a different account</Txt>
+            <Txt color={colors.body}>
+              This device is set up for another login, so the link was ignored. Sign in again with your usual email and password; nothing on
+              this device was lost.
+            </Txt>
+            <Button label="Go to sign in" onPress={onDone} />
+          </>
         ) : state === 'expired' ? (
           <>
             <Txt variant="heading">This link doesn’t work any more</Txt>
             <Txt color={colors.body}>
-              {link.kind === 'error' ? `${link.message}. ` : ''}Links from these emails work once and expire after a while. Ask for a new
-              invitation, or use “Forgot password?” on the sign-in screen.
+              Links from these emails work once and expire after a while. Ask for a new invitation, or use “Forgot password?” on the sign-in
+              screen.
             </Txt>
             <Button label="Go to sign in" onPress={onDone} />
           </>

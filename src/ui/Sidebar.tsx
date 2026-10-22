@@ -144,6 +144,7 @@ function SyncBox() {
           <View style={styles.dialog} accessibilityViewIsModal>
             <Txt variant="heading">Change password</Txt>
             <PasswordForm
+              askCurrent
               submitLabel="Save new password"
               onDone={() => {
                 setChanging(false);
@@ -157,7 +158,7 @@ function SyncBox() {
       <ConfirmDialog
         visible={changed}
         title="Password changed"
-        message="Use the new password the next time you sign in, on every device."
+        message="Other devices were signed out. Sign in there with the new password."
         confirmLabel="OK"
         onCancel={() => setChanged(false)}
         onConfirm={() => setChanged(false)}

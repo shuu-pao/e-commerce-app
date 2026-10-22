@@ -21,9 +21,19 @@ function isNetworkError(e: unknown): boolean {
   return /fetch|network|load failed|timed? ?out/i.test(msg);
 }
 
+function message(e: unknown): string {
+  return typeof e === 'object' && e && 'message' in e ? String(e.message) : String(e);
+}
+
+/** The login itself is no longer valid (password changed elsewhere, session revoked or expired). */
+function loginRejected(e: unknown): boolean {
+  const status = typeof e === 'object' && e && 'status' in e ? Number(e.status) : 0;
+  return status === 401 || /refresh token|auth session missing|jwt expired|invalid jwt|not authenticated/i.test(message(e));
+}
+
 function describe(e: unknown): string {
-  const msg = typeof e === 'object' && e && 'message' in e ? String(e.message) : String(e);
-  if (/jwt|token|auth|permission|401|403/i.test(msg)) return 'Sign in again to keep syncing.';
+  const msg = message(e);
+  if (/row-level security|permission denied|42501/i.test(msg)) return 'This login isn’t on the shop’s owner list. Ask Paolo to add it.';
   return `Sync failed: ${msg}`;
 }
 
@@ -102,7 +112,11 @@ export async function syncNow(): Promise<void> {
     store.updateSync({ online: true, error: null, lastSyncedAt: new Date().toISOString() });
   } catch (e) {
     if (isNetworkError(e)) store.updateSync({ online: false, error: null });
-    else store.updateSync({ online: true, error: describe(e) });
+    else if (loginRejected(e)) {
+      // Show the sign-in screen again. Nothing on the device is lost; unsent orders upload after signing in.
+      store.updateSync({ online: true, error: null });
+      store.updateSettings({ signedInEmail: null });
+    } else store.updateSync({ online: true, error: describe(e) });
   } finally {
     running = false;
     store.updateSync({ syncing: false });
@@ -172,8 +186,9 @@ export async function signIn(email: string, password: string): Promise<string | 
   if (!supabase) return null;
   const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
   if (error) return isNetworkError(error) ? 'No internet. Signing in needs a connection the first time.' : 'Wrong email or password.';
-  store.updateSettings({ signedInEmail: email.trim(), lastPulledAt: null });
-  store.queueEverything();
+  // Never synced before (device-only data, or a fresh device): upload everything once.
+  if (!store.getState().settings.lastPulledAt) store.queueEverything();
+  store.updateSettings({ signedInEmail: email.trim() });
   void syncNow();
   return null;
 }
@@ -189,19 +204,37 @@ export async function sendPasswordReset(email: string): Promise<string | null> {
   return error.message;
 }
 
-/** True when this device holds a login session (for example, right after opening an emailed link). */
-export async function hasSession(): Promise<boolean> {
-  if (!supabase) return false;
+/**
+ * Checks the session an emailed link just created. A link for a different account than the one
+ * signed in on this device is refused (someone could send the seller a link to their own account),
+ * and the device asks for a normal sign-in again, keeping its data.
+ */
+export async function checkLinkSession(): Promise<'ok' | 'none' | 'otherAccount'> {
+  if (!supabase) return 'none';
   const { data } = await supabase.auth.getSession();
-  return !!data.session;
+  const email = data.session?.user.email;
+  if (!email) return 'none';
+  const current = store.getState().settings.signedInEmail;
+  if (current && current.toLowerCase() !== email.toLowerCase()) {
+    await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+    store.updateSettings({ signedInEmail: null });
+    return 'otherAccount';
+  }
+  return 'ok';
 }
 
 /**
  * Sets a new password for whoever is signed in: after an invitation or reset link, or from
  * "Change password". Finishes signing this device in if it wasn't already.
  */
-export async function setNewPassword(password: string): Promise<string | null> {
+export async function setNewPassword(password: string, currentPassword?: string): Promise<string | null> {
   if (!supabase) return null;
+  if (currentPassword !== undefined) {
+    // Changing a known password: prove it's the owner first, not just someone holding the iPad.
+    const email = store.getState().settings.signedInEmail ?? '';
+    const check = await supabase.auth.signInWithPassword({ email, password: currentPassword });
+    if (check.error) return isNetworkError(check.error) ? 'No internet. Changing the password needs a connection.' : 'The current password is wrong.';
+  }
   const { data, error } = await supabase.auth.updateUser({ password });
   if (error) {
     if (isNetworkError(error)) return 'No internet. Changing the password needs a connection.';
@@ -209,10 +242,13 @@ export async function setNewPassword(password: string): Promise<string | null> {
     if (/session|jwt|auth/i.test(error.message)) return 'This link has expired. Ask for a new one.';
     return error.message;
   }
+  // Sign out every other device that knew the old password.
+  await supabase.auth.signOut({ scope: 'others' }).catch(() => undefined);
   const email = data.user?.email ?? null;
-  if (email && store.getState().settings.signedInEmail !== email) {
-    store.updateSettings({ signedInEmail: email, lastPulledAt: null });
-    store.queueEverything();
+  if (email && !store.getState().settings.signedInEmail) {
+    // Signing this device in (checkLinkSession already refused other accounts).
+    if (!store.getState().settings.lastPulledAt) store.queueEverything();
+    store.updateSettings({ signedInEmail: email });
   }
   void syncNow();
   return null;

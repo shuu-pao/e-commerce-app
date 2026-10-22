@@ -75,7 +75,11 @@ new session needs to know beyond that:
   web only, implicit flow, the link type is read from the address before
   supabase-js consumes it). "Forgot password?" on sign-in and "Change
   password" in the sidebar use the same form. Supabase's Site URL must be the
-  published address.
+  published address. Safeguards (from a security review): a link for a different
+  account than the one signed in is refused; link error text is never
+  shown (fixed wording only); Change password asks for the current one and
+  signs out other devices; when the server rejects a login, the device goes
+  back to the sign-in screen and keeps its unsent orders.
 - **Device-only mode**: with no `EXPO_PUBLIC_SUPABASE_*` values the app
   runs without sign-in or sync, and offers sample products (from the mock).
 - **Typecheck** needs the generated route types: run `npx expo start` once

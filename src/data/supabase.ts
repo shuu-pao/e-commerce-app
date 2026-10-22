@@ -9,7 +9,7 @@ const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 const onWeb = Platform.OS === 'web' && typeof window !== 'undefined';
 
 /** What an emailed link (invitation or password reset) asked for when it opened the app. */
-export type AuthLink = { kind: 'invite' | 'recovery' } | { kind: 'error'; message: string } | null;
+export type AuthLink = { kind: 'invite' | 'recovery' } | { kind: 'error'; expired: boolean } | null;
 
 /**
  * Read before the client below consumes the address. Supabase's emails send people to
@@ -18,8 +18,9 @@ export type AuthLink = { kind: 'invite' | 'recovery' } | { kind: 'error'; messag
 function readAuthLink(): AuthLink {
   if (!onWeb || !url) return null;
   const params = new URLSearchParams(window.location.hash.slice(1));
-  const error = params.get('error_description');
-  if (error) return { kind: 'error', message: error.replace(/\+/g, ' ') };
+  // Only the error code is used, never the description: anyone can put text in a link.
+  const error = params.get('error_code') ?? params.get('error');
+  if (error) return { kind: 'error', expired: error === 'otp_expired' };
   const type = params.get('type');
   return params.get('access_token') && (type === 'invite' || type === 'recovery') ? { kind: type } : null;
 }
