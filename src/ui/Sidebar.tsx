@@ -120,7 +120,7 @@ function SyncBox() {
         accessibilityRole="button"
         accessibilityLabel={`${title}. ${detail}${syncEnabled ? '. Tap to sync now.' : ''}`}
         disabled={!syncEnabled}
-        onPress={() => void syncNow()}
+        onPress={() => void syncNow(true)}
         style={[styles.sync, { backgroundColor: bg }]}
       >
         <View style={styles.syncTitle}>

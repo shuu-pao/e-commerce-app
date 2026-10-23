@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
 
 import { sendPasswordReset, signIn } from '@/data/sync';
@@ -16,19 +16,47 @@ export function SignIn() {
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Gentle client-side brakes; Supabase's own per-network limits are the real protection.
+  const [failures, setFailures] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState(0);
+  const [resendAt, setResendAt] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
+  const waitUntil = Math.max(lockedUntil, sent ? resendAt : 0);
+  useEffect(() => {
+    if (waitUntil <= Date.now()) return;
+    const tick = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(tick);
+  }, [waitUntil]);
+  const lockSeconds = Math.max(0, Math.ceil((lockedUntil - now) / 1000));
+  const resendSeconds = Math.max(0, Math.ceil((resendAt - now) / 1000));
 
   const submit = async () => {
     if (!email.trim() || (mode === 'signIn' && !password)) {
       setError(mode === 'signIn' ? 'Enter your email and password.' : 'Enter your email.');
       return;
     }
+    if (mode === 'signIn' && lockSeconds) return;
     setBusy(true);
     if (mode === 'signIn') {
-      setError(await signIn(email, password));
+      const problem = await signIn(email, password);
+      setError(problem);
+      if (problem === 'Wrong email or password.') {
+        const n = failures + 1;
+        setFailures(n);
+        // After 5 wrong tries, wait 30 s; each further 5 doubles it, up to 5 minutes.
+        if (n % 5 === 0) {
+          setLockedUntil(Date.now() + Math.min(30_000 * 2 ** (n / 5 - 1), 300_000));
+          setNow(Date.now());
+        }
+      }
     } else {
       const problem = await sendPasswordReset(email);
       setError(problem);
       setSent(!problem);
+      if (!problem) {
+        setResendAt(Date.now() + 60_000); // Supabase allows one reset email per minute per user
+        setNow(Date.now());
+      }
     }
     setBusy(false);
   };
@@ -57,7 +85,10 @@ export function SignIn() {
               onSubmitEditing={submit}
               error={error}
             />
-            <Button label="Sign in" size="lg" onPress={submit} busy={busy} />
+            {lockSeconds ? (
+              <Txt color={colors.warnInk}>Too many wrong passwords. Try again in {lockSeconds} s, or use “Forgot password?”.</Txt>
+            ) : null}
+            <Button label={lockSeconds ? `Try again in ${lockSeconds} s` : 'Sign in'} size="lg" onPress={submit} busy={busy} disabled={!!lockSeconds} />
             <Button label="Forgot password?" variant="ghost" onPress={() => switchTo('forgot')} style={styles.link} />
           </>
         ) : sent ? (
@@ -67,6 +98,16 @@ export function SignIn() {
               If {email.trim()} has an account, a link to choose a new password is on its way. Open it on this device. It can take a few minutes; check
               spam too.
             </Txt>
+            <Txt variant="small">Only a few of these emails can be sent per hour, so wait for this one before asking again.</Txt>
+            <Button
+              label={resendSeconds ? `Send again in ${resendSeconds} s` : 'Send again'}
+              variant="ghost"
+              disabled={!!resendSeconds || busy}
+              onPress={() => {
+                setSent(false);
+                void submit();
+              }}
+            />
             <Button label="Back to sign in" variant="outline" onPress={() => switchTo('signIn')} />
           </>
         ) : (

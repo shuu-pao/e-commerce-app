@@ -118,6 +118,15 @@ new session needs to know beyond that:
   errors or blank screens; one bug found and fixed ("undefined" flashing in
   fading delete dialogs). Script: `scripts/monkey.js` (how to run it is at
   its top); always against a device-only dev server, never the live data.
+- **Rate limiting** (2026-10-23). Supabase Auth limits per network (sign-in
+  attempts via /token, reset/verify links) and allows only 2 emails per hour
+  per project with its built-in sender (invitations and resets share it).
+  On top of that: the sign-in screen pauses 30 s after 5 wrong passwords
+  (doubling, up to 5 min); "Send again" for a reset link waits 60 s; sync
+  backs off from 1 to 15 minutes while it keeps failing (tapping the sync
+  box retries at once); `push_records` refuses more than 500 records per
+  upload or a record over 4 MB, and the app uploads at most 200 at a time.
+  The migration file is safe to re-run; re-run it to apply changes.
 - `npm audit` lists issues in Expo's build tooling (config plugins), not in
   code that ships to the browser; they clear with Expo SDK updates.
 
@@ -376,3 +385,4 @@ and the desktop it's a sidebar that stays open.
 | 2026-10-22 | Photos stored in the product record as small square JPEGs (build) |
 | 2026-10-22 | Only users in `shop_owners` can read or write; sign-ups off (build) |
 | 2026-10-22 | The owner joins by invitation and sets their own password; forgot and change password in the app; no public sign-up (developer) |
+| 2026-10-23 | Rate limiting: Supabase's auth limits plus app-side sign-in cooldown, reset-email cooldown, sync back-off, and upload size limits in the database (build) |

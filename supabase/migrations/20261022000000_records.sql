@@ -1,4 +1,5 @@
--- caracebu: the whole database. Run once in Supabase › SQL Editor (see README).
+-- caracebu: the whole database. Run in Supabase › SQL Editor (see README).
+-- Safe to run again after changes: everything below replaces what's there.
 --
 -- Every synced record (products, categories, events, orders, stock changes) is one row of JSON.
 -- The app keeps its own copy on each device and works offline; this table is where the
@@ -32,6 +33,9 @@ create table if not exists public.records (
 create index if not exists records_synced_at on public.records (synced_at, id);
 
 alter table public.records enable row level security;
+drop policy if exists "shop owner reads" on public.records;
+drop policy if exists "shop owner adds" on public.records;
+drop policy if exists "shop owner changes" on public.records;
 create policy "shop owner reads" on public.records for select to authenticated using (public.is_shop_owner());
 create policy "shop owner adds" on public.records for insert to authenticated with check (public.is_shop_owner());
 create policy "shop owner changes" on public.records for update to authenticated
@@ -50,6 +54,8 @@ create trigger records_touch before insert or update on public.records
   for each row execute function public.touch_synced_at();
 
 -- Uploads a batch from a device. A row only replaces the stored one if it's at least as new.
+-- Limits (so a stolen login or a buggy device can't fill the free 500 MB database in one go):
+-- at most 500 records per upload, and 4 MB per record (a product with photos is ~0.1–1 MB).
 -- Two devices can give an order the same number while offline; the later upload gets the
 -- next free number (and a fresh timestamp, so both devices pick up the change).
 create or replace function public.push_records(rows jsonb) returns void
@@ -59,8 +65,14 @@ declare
   next_number int;
 begin
   -- One upload at a time, so two devices can't both claim the next order number.
+  if jsonb_typeof(rows) <> 'array' or jsonb_array_length(rows) > 500 then
+    raise exception 'An upload holds at most 500 records' using errcode = '54000';
+  end if;
   perform pg_advisory_xact_lock(hashtext('caracebu.push_records'));
   for r in select value from jsonb_array_elements(rows) loop
+    if octet_length((r->'data')::text) > 4000000 then
+      raise exception 'A record is larger than 4 MB' using errcode = '54000';
+    end if;
     if r->>'collection' = 'orders'
        and not coalesce((r->>'deleted')::boolean, false)
        and exists (

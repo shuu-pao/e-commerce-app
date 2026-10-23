@@ -66,6 +66,13 @@ npm run build:web    # production build + service worker in dist/
 6. Restart `npm run web`. The app now asks to sign in; after signing in the sidebar shows
    **Online · Everything is synced**.
 
+**Tighter sign-in limit (recommended).** In **Authentication › Rate Limits**, set the
+token limit (sign-ins and token refreshes) to **30 requests per 5 minutes** instead of 150.
+One shop with a couple of devices never needs more, and it slows down password guessing.
+
+**Updating the database.** `supabase/migrations/20261022000000_records.sql` is safe to run
+again: paste the whole file into **SQL Editor** and **Run** after it changes.
+
 **Keeping the free project awake.** Supabase pauses a free project after a week without
 use. `.github/workflows/keep-supabase-awake.yml` pings it every 3 days: add
 `SUPABASE_URL` and `SUPABASE_ANON_KEY` as repository secrets (Settings › Secrets ›

@@ -8,11 +8,15 @@ import * as store from './store';
 import { supabase } from './supabase';
 
 const MAX_BATCH_BYTES = 800_000; // photos make records big; keep each request well under API limits
+const MAX_BATCH_ROWS = 200; // the server refuses more than 500 records per upload
 const PAGE = 500;
 
 let running = false;
 let runAgain = false;
 let timer: ReturnType<typeof setTimeout> | null = null;
+/** After repeated failures (not just "offline"), automatic retries wait longer: 1, 2, 4… up to 15 minutes. */
+let failures = 0;
+let retryAt = 0;
 
 export const syncEnabled = supabase !== null;
 
@@ -42,7 +46,7 @@ function* batches(records: store.RemoteRecord[]) {
   let size = 0;
   for (const r of records) {
     const bytes = JSON.stringify(r.record).length;
-    if (batch.length && size + bytes > MAX_BATCH_BYTES) {
+    if (batch.length && (size + bytes > MAX_BATCH_BYTES || batch.length >= MAX_BATCH_ROWS)) {
       yield batch;
       batch = [];
       size = 0;
@@ -100,8 +104,10 @@ async function pull() {
   if (done !== cursor) store.updateSettings({ lastPulledAt: done });
 }
 
-export async function syncNow(): Promise<void> {
+/** `force` (the seller tapping the sync box) skips the back-off wait. */
+export async function syncNow(force = false): Promise<void> {
   if (!supabase || !store.getState().settings.signedInEmail) return;
+  if (!force && Date.now() < retryAt) return;
   if (running) {
     runAgain = true;
     return;
@@ -112,7 +118,13 @@ export async function syncNow(): Promise<void> {
     await push();
     await pull();
     store.updateSync({ online: true, error: null, lastSyncedAt: new Date().toISOString() });
+    failures = 0;
+    retryAt = 0;
   } catch (e) {
+    if (!isNetworkError(e)) {
+      failures += 1;
+      retryAt = Date.now() + Math.min(60_000 * 2 ** (failures - 1), 15 * 60_000);
+    }
     if (isNetworkError(e)) store.updateSync({ online: false, error: null });
     else if (loginRejected(e)) {
       // Show the sign-in screen again. Nothing on the device is lost; unsent orders upload after signing in.
@@ -187,7 +199,11 @@ export function startSync(): () => void {
 export async function signIn(email: string, password: string): Promise<string | null> {
   if (!supabase) return null;
   const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-  if (error) return isNetworkError(error) ? 'No internet. Signing in needs a connection the first time.' : 'Wrong email or password.';
+  if (error) {
+    if (isNetworkError(error)) return 'No internet. Signing in needs a connection the first time.';
+    if (error.status === 429) return 'Too many sign-in attempts from this network. Wait a few minutes, then try again.';
+    return 'Wrong email or password.';
+  }
   // Never synced before (device-only data, or a fresh device): upload everything once.
   if (!store.getState().settings.lastPulledAt) store.queueEverything();
   store.updateSettings({ signedInEmail: email.trim() });

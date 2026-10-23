@@ -70,4 +70,14 @@ await db.exec('set role anon;');
 await assert.rejects(db.query('select public.push_records($1::jsonb)', ['[]']), /permission denied/);
 await db.exec('reset role;');
 
+// 7. Upload limits: more than 500 records, or one record over 4 MB, is refused.
+const many = Array.from({ length: 501 }, (_, i) => row(`cccccccc-0000-4000-8000-${String(i).padStart(12, '0')}`, 1000 + i, '2026-10-22T10:00:00.000Z'));
+await assert.rejects(push(OWNER, many), /at most 500/);
+await assert.rejects(push(OWNER, [row('dddddddd-0000-4000-8000-000000000001', 3000, '2026-10-22T10:00:00.000Z', { photo: 'x'.repeat(4_100_000) })]), /larger than 4 MB/);
+assert.equal((await orders()).length, 2, 'refused uploads wrote nothing');
+
+// 8. The migration can be run again without errors (how updates are applied).
+await db.exec(readFileSync(new URL('./migrations/20261022000000_records.sql', import.meta.url), 'utf8'));
+assert.equal((await orders()).length, 2, 're-running keeps the data');
+
 console.log('SQL migration: all checks passed');
