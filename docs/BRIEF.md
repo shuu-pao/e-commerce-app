@@ -50,8 +50,8 @@ new session won't know it, so record it here in the same turn.
   `npx eas-cli@latest deploy --prod`.
 - Next: Supabase Site URL and redirect URLs, invite the client, install on
   the iPad (README). The keep-awake ping works (GitHub secrets set, tested 2026-10-22).
-  Then the public catalog (plan below), once the client answers round 3
-  (Open questions).
+  Then the public catalog (plan below; round 3 answered 2026-10-24):
+  catalog screens in the mock for approval first, then build.
 
 ## Build notes (version 1, 2026-10-22)
 
@@ -164,19 +164,22 @@ the developer.
 
 ## Open questions
 
-Round 3 (2026-10-24), the public catalog: sent on the questions page
-(same link, numbered 1 to 5 there). New client questions get batched here
-and asked all at once; never trickle them out one reply at a time.
-
-1. Show prices in the catalog?
-2. Stock: only "Sold out", how many are left, or nothing?
-3. Which products: all, or a "Show in catalog" switch per product?
-4. How do people order: a "Message us on Instagram" button per product,
-   no button, or something else? (The client still records the order
-   under the Online event.)
-5. The shop's Instagram username.
+None. The client answered round 3 (the public catalog) on 2026-10-24
+(Decisions below). New client questions get batched here and asked all at
+once; never trickle them out one reply at a time.
 
 ## Public catalog (plan, 2026-10-24, not built yet)
+
+What it shows (client, round 3): title, photo, description, price,
+colours. Never the stock count: a colour or product with no stock shows
+"Sold out" (and stays listed), and 5 pieces or fewer shows "Low on stock".
+Only products with "Show in catalog" switched on appear (a switch on Add
+or edit product). A "Message us on Instagram" button opens
+https://instagram.com/caracebu (the profile, not a direct message).
+Developer-level defaults, shown in the mock for the client's OK: the
+switch starts off for new and existing products; the labels show per
+colour, and on the product card when the whole product is sold out or
+has 5 pieces or fewer in total.
 
 The client wants a public page that shows all the products with no login,
 on the same host if possible, using the app's stock. Plan (developer
@@ -419,4 +422,5 @@ and the desktop it's a sidebar that stays open.
 | 2026-10-22 | Only users in `shop_owners` can read or write; sign-ups off (build) |
 | 2026-10-22 | The owner joins by invitation and sets their own password; forgot and change password in the app; no public sign-up (developer) |
 | 2026-10-23 | Rate limiting: Supabase's auth limits plus app-side sign-in cooldown, reset-email cooldown, sync back-off, and upload size limits in the database (build) |
-| 2026-10-24 | Public catalog in the same app and address: no login shows the catalog, the owner's login shows the cashier; no customer accounts (client asked, developer agreed; details wait on round 3) |
+| 2026-10-24 | Public catalog in the same app and address: no login shows the catalog, the owner's login shows the cashier; no customer accounts (client asked, developer agreed) |
+| 2026-10-24 | Catalog shows prices; "Sold out" and "Low on stock" (5 pieces or fewer) instead of stock counts; only products switched to "Show in catalog"; a "Message us on Instagram" button opens instagram.com/caracebu (client, round 3) |
