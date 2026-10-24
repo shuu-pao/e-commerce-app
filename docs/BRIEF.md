@@ -50,7 +50,8 @@ new session won't know it, so record it here in the same turn.
   `npx eas-cli@latest deploy --prod`.
 - Next: Supabase Site URL and redirect URLs, invite the client, install on
   the iPad (README). The keep-awake ping works (GitHub secrets set, tested 2026-10-22).
-  Nothing new to ask the client.
+  Then the public catalog (plan below), once the client answers round 3
+  (Open questions).
 
 ## Build notes (version 1, 2026-10-22)
 
@@ -163,9 +164,41 @@ the developer.
 
 ## Open questions
 
-None. The client answered round 2 on 2026-10-22 (Decisions below). New
-client questions get batched here and asked all at once; never trickle
-them out one reply at a time.
+Round 3 (2026-10-24), the public catalog: sent on the questions page
+(same link, numbered 1 to 5 there). New client questions get batched here
+and asked all at once; never trickle them out one reply at a time.
+
+1. Show prices in the catalog?
+2. Stock: only "Sold out", how many are left, or nothing?
+3. Which products: all, or a "Show in catalog" switch per product?
+4. How do people order: a "Message us on Instagram" button per product,
+   no button, or something else? (The client still records the order
+   under the Online event.)
+5. The shop's Instagram username.
+
+## Public catalog (plan, 2026-10-24, not built yet)
+
+The client wants a public page that shows all the products with no login,
+on the same host if possible, using the app's stock. Plan (developer
+agreed): same app and address (caracebu.expo.app). No login shows the
+catalog, with a small "Shop owner? Sign in" link; the owner's login
+(`shop_owners`) shows the cashier app as now. No customer accounts;
+sign-ups stay off.
+- Visitors read through one read-only database function that returns only
+  products, categories and stock. Orders, events and reports stay
+  owner-only; the access rules stay as they are.
+- Photos: copy each one to a public Supabase Storage folder when it syncs,
+  so visitors load ordinary cached images. The app keeps its own copies in
+  the records, so offline selling doesn't change. Without this every
+  visitor pulls 20+ MB through the database (5 GB free egress a month),
+  and a busy Instagram post could get the project restricted, which stops
+  the cashier too.
+- Catalog screens reuse the Sell grid and search, without the cart.
+- Rejected: a separate static site rebuilt every hour (the client asked
+  for the same host, and its stock would lag by up to an hour).
+- Trade-offs: visitors download the app's code (1.7 MB before
+  compression); link previews are the same for every product (one-page
+  app).
 
 ## Offline plan (approved 2026-10-20)
 
@@ -385,4 +418,5 @@ and the desktop it's a sidebar that stays open.
 | 2026-10-22 | Photos stored in the product record as small square JPEGs (build) |
 | 2026-10-22 | Only users in `shop_owners` can read or write; sign-ups off (build) |
 | 2026-10-22 | The owner joins by invitation and sets their own password; forgot and change password in the app; no public sign-up (developer) |
+| 2026-10-24 | Public catalog in the same app and address: no login shows the catalog, the owner's login shows the cashier; no customer accounts (client asked, developer agreed; details wait on round 3) |
 | 2026-10-23 | Rate limiting: Supabase's auth limits plus app-side sign-in cooldown, reset-email cooldown, sync back-off, and upload size limits in the database (build) |
