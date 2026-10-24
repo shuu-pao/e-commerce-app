@@ -17,6 +17,10 @@ Without Supabase keys the app runs on that one device: no sign-in, no sync. Tap
 **Try it with sample products** on the empty Sell screen to fill it with the products
 from the mock.
 
+**Testing with `.env` filled in:** `npm run web:local` (http://localhost:8083) ignores the
+keys and runs device-only, so testing never touches the shop's live data. The sidebar says
+**On this device only**; if it doesn't, stop and check before changing anything.
+
 ## Checks
 
 ```bash

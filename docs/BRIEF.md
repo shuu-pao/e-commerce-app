@@ -141,8 +141,8 @@ new session needs to know beyond that:
 The live Supabase project holds the client's real data; never test there,
 and never put a test login in `shop_owners`. Supabase's free plan allows
 two projects and the developer has none left, so there is no test project.
-Test with: device-only mode (`EXPO_PUBLIC_SUPABASE_URL=
-EXPO_PUBLIC_SUPABASE_ANON_KEY= npx expo start --web`), `npm run test:db`
+Test with: device-only mode (`npm run web:local`, port 8083; it blanks the
+Supabase keys, which typing them empty in PowerShell can't do), `npm run test:db`
 (the migration in PGlite), and stubbed network responses in Playwright.
 If sync or sign-in ever need a real server, run Supabase locally (Supabase
 CLI, needs Docker); not set up.
