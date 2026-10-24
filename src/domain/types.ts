@@ -29,6 +29,8 @@ export interface Product extends BaseRecord {
   categoryIds: Id[];
   photo: string | null;
   variants: Variant[];
+  /** Shown in the public catalog. Off unless the owner switches it on. */
+  showInCatalog?: boolean;
 }
 
 export interface ShopEvent extends BaseRecord {

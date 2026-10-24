@@ -29,6 +29,8 @@ export interface Settings {
   lastPulledAt: string | null;
   /** Who signed in on this device. Kept while offline, so selling never locks out. */
   signedInEmail: string | null;
+  /** Catalog photo files this device already uploaded (src/data/catalog.ts). */
+  publishedPhotos?: string[];
 }
 
 export interface SyncStatus {

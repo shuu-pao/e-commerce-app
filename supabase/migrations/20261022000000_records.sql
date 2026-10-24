@@ -104,3 +104,92 @@ begin
 end $$;
 revoke all on function public.push_records(jsonb) from public, anon;
 grant execute on function public.push_records(jsonb) to authenticated;
+
+-- ---- Public catalog (docs/BRIEF.md, "Public catalog") ----------------------------------
+-- Anyone, signed in or not, can read the products the owner switched to "Show in catalog":
+-- name, description, price, categories, colours and photo file names. Stock never leaves as a
+-- number, only 'out' (sold out) or 'low' (5 pieces or fewer). Orders, events and stock records
+-- stay owner-only: this function is the only way in for visitors.
+
+create or replace function public.stock_status(n numeric) returns text
+language sql immutable set search_path = '' as $$
+  select case when n <= 0 then 'out' when n <= 5 then 'low' end;
+$$;
+
+-- Photos are data URLs inside the product record. The owner's device copies each catalog photo
+-- to the public "catalog" bucket under the SHA-256 of that text, so visitors load ordinary,
+-- cacheable images instead of pulling every photo through the database (src/data/catalog.ts).
+create or replace function public.catalog_photo_path(photo text) returns text
+language sql immutable set search_path = '' as $$
+  select case when coalesce(photo, '') = '' then null
+    else encode(sha256(convert_to(photo, 'UTF8')), 'hex') || '.jpg' end;
+$$;
+
+create or replace function public.catalog() returns jsonb
+language sql stable security definer set search_path = '' as $$
+  with left_by_variant as (
+    select variant_id, sum(n) as n from (
+      select s.data->>'variantId' as variant_id, (s.data->>'delta')::bigint as n
+      from public.records s where s.collection = 'stock' and not s.deleted
+      union all
+      select l->>'variantId', -(l->>'qty')::bigint
+      from public.records o cross join lateral jsonb_array_elements(o.data->'lines') l
+      where o.collection = 'orders' and not o.deleted
+    ) x group by variant_id
+  ),
+  shown as (
+    select p.data as d from public.records p
+    where p.collection = 'products' and not p.deleted and coalesce((p.data->>'showInCatalog')::boolean, false)
+  )
+  select jsonb_build_object(
+    'products', coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'id', d->>'id',
+        'name', d->>'name',
+        'description', d->>'description',
+        'price', (d->>'price')::bigint,
+        'categoryIds', d->'categoryIds',
+        'photo', public.catalog_photo_path(d->>'photo'),
+        'variants', (
+          select jsonb_agg(jsonb_build_object(
+            'id', v->>'id',
+            'name', v->>'name',
+            'photo', public.catalog_photo_path(v->>'photo'),
+            'stock', public.stock_status(coalesce(s.n, 0))
+          ) order by t.ord)
+          from jsonb_array_elements(d->'variants') with ordinality as t(v, ord)
+          left join left_by_variant s on s.variant_id = v->>'id'
+        ),
+        'stock', public.stock_status((
+          select coalesce(sum(greatest(s.n, 0)), 0)
+          from jsonb_array_elements(d->'variants') v
+          join left_by_variant s on s.variant_id = v->>'id'
+        ))
+      ) order by d->>'name')
+      from shown
+    ), '[]'::jsonb),
+    'categories', coalesce((
+      select jsonb_agg(jsonb_build_object('id', c.data->>'id', 'name', c.data->>'name') order by c.data->>'name')
+      from public.records c where c.collection = 'categories' and not c.deleted
+    ), '[]'::jsonb)
+  );
+$$;
+revoke all on function public.catalog() from public;
+grant execute on function public.catalog() to anon, authenticated;
+
+-- The bucket is public for reading (that's what makes the photos cacheable); only the owner
+-- uploads. JPEG only, at most 1 MB a file (the app saves 600 px photos, about 100 KB).
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('catalog', 'catalog', true, 1048576, array['image/jpeg'])
+on conflict (id) do update
+  set public = true, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "shop owner reads catalog photos" on storage.objects;
+drop policy if exists "shop owner adds catalog photos" on storage.objects;
+drop policy if exists "shop owner changes catalog photos" on storage.objects;
+create policy "shop owner reads catalog photos" on storage.objects for select to authenticated
+  using (bucket_id = 'catalog' and public.is_shop_owner());
+create policy "shop owner adds catalog photos" on storage.objects for insert to authenticated
+  with check (bucket_id = 'catalog' and public.is_shop_owner());
+create policy "shop owner changes catalog photos" on storage.objects for update to authenticated
+  using (bucket_id = 'catalog' and public.is_shop_owner()) with check (bucket_id = 'catalog' and public.is_shop_owner());

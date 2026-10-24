@@ -1,8 +1,9 @@
 // npm run test:db — no Supabase account needed.
 // Runs the real migration in Postgres (PGlite) with a stub of Supabase's auth schema, then checks
-// row-level security, newest-wins uploads and order renumbering.
+// row-level security, newest-wins uploads, order renumbering and the public catalog.
 import { PGlite } from '@electric-sql/pglite';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
 const db = new PGlite();
@@ -12,6 +13,12 @@ await db.exec(`
   create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.uid', true), '')::uuid $$;
   create role anon; create role authenticated;
   grant usage on schema public, auth to anon, authenticated;
+  create schema storage;
+  create table storage.buckets (id text primary key, name text, public boolean, file_size_limit bigint, allowed_mime_types text[]);
+  create table storage.objects (bucket_id text, name text);
+  alter table storage.objects enable row level security;
+  grant usage on schema storage to anon, authenticated;
+  grant select, insert, update on storage.objects to anon, authenticated;
 `);
 await db.exec(readFileSync(new URL('./migrations/20261022000000_records.sql', import.meta.url), 'utf8'));
 await db.exec(`
@@ -79,5 +86,40 @@ assert.equal((await orders()).length, 2, 'refused uploads wrote nothing');
 // 8. The migration can be run again without errors (how updates are applied).
 await db.exec(readFileSync(new URL('./migrations/20261022000000_records.sql', import.meta.url), 'utf8'));
 assert.equal((await orders()).length, 2, 're-running keeps the data');
+
+
+// 9. The public catalog: only switched-on products, stock as 'out'/'low' (never a number), and
+// photo names that match what the app uploads (SHA-256 of the data URL, as src/data/catalog.ts).
+const rec = (collection, id, data) => ({ collection, id, updated_at: '2026-10-24T00:00:00.000Z', deleted: false, data: { id, updatedAt: '2026-10-24T00:00:00.000Z', ...data } });
+const P1 = 'eeeeeeee-0000-4000-8000-000000000001';
+const P2 = 'eeeeeeee-0000-4000-8000-000000000002';
+const photo = 'data:image/jpeg;base64,AAAA';
+await push(OWNER, [
+  rec('products', P1, { name: 'Daisy claw clip', description: 'Acetate', price: 12000, categoryIds: [], photo, showInCatalog: true,
+    variants: [{ id: 'v-yellow', name: 'Yellow', photo: null }, { id: 'v-white', name: 'White', photo: null }, { id: 'v-pink', name: 'Pink', photo: null }] }),
+  rec('products', P2, { name: 'Hidden', description: '', price: 100, categoryIds: [], photo: null, variants: [{ id: 'v-h', name: '', photo: null }] }),
+  rec('stock', 'eeeeeeee-0000-4000-8000-000000000011', { productId: P1, variantId: 'v-yellow', delta: 8 }),
+  rec('stock', 'eeeeeeee-0000-4000-8000-000000000012', { productId: P1, variantId: 'v-white', delta: 4 }),
+  rec('orders', 'eeeeeeee-0000-4000-8000-000000000021', { number: 50, lines: [{ variantId: 'v-yellow', qty: 2 }] }),
+]);
+await db.exec('set role anon;');
+const cat = (await db.query('select public.catalog() as c')).rows[0].c;
+await assert.rejects(db.query('select * from public.records'), /permission denied/, 'anon reads no records directly');
+await db.exec('reset role;');
+assert.deepEqual(cat.products.map((p) => p.name), ['Daisy claw clip'], 'only switched-on products');
+const daisy = cat.products[0];
+assert.deepEqual(daisy.variants.map((v) => v.stock), [null, 'low', 'out'], 'yellow 6 left, white 4, pink 0');
+assert.equal(daisy.stock, null, '10 left in total');
+assert.equal(daisy.photo, createHash('sha256').update(photo).digest('hex') + '.jpg');
+assert.ok(!JSON.stringify(cat).match(/"(delta|qty|lines)"/), 'no stock numbers or orders leave');
+
+// 10. Only the owner can upload catalog photos.
+const upload = (uid) => as(uid, "insert into storage.objects (bucket_id, name) values ('catalog', 'x.jpg')");
+await upload(OWNER);
+await assert.rejects(upload(STRANGER), /row-level security/);
+await db.exec('set role anon;');
+await assert.rejects(db.query("insert into storage.objects (bucket_id, name) values ('catalog', 'y.jpg')"), /row-level security/);
+await db.exec('reset role;');
+await db.exec(readFileSync(new URL('./migrations/20261022000000_records.sql', import.meta.url), 'utf8'));
 
 console.log('SQL migration: all checks passed');

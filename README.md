@@ -90,6 +90,22 @@ Any other static host works too if it sends every unknown path to `/index.html` 
 single-page app). The `EXPO_PUBLIC_SUPABASE_*` values are baked in at build time, so set
 them in `.env` before `npm run build:web`.
 
+## The public catalog
+
+Anyone who opens the site without signing in sees the catalog: the products switched to
+**Show in catalog** on Edit product (off for new products), with prices, colours and
+"Sold out" / "Low on stock" (5 pieces or fewer), never the stock count. **Message us on
+Instagram** opens instagram.com/caracebu, and **Shop owner? Sign in** at the bottom opens the
+sign-in screen. A device that has synced before (the owner's iPad or computer) opens on
+sign-in instead.
+
+- Visitors read one database function, `public.catalog()`; everything else stays owner-only.
+- Photos: after each sync the owner's device copies catalog photos to the public `catalog`
+  storage bucket, named by their SHA-256, so visitors load cached images instead of pulling
+  photos through the database. A newly switched-on product's photo appears once the owner's
+  device has synced.
+- Needs the current migration (it creates the function, the bucket and its upload rules).
+
 ## Install on the iPad
 
 Open the site in **Safari**, tap **Share › Add to Home Screen › Add**. Then open it **from
@@ -108,7 +124,7 @@ event so it downloads everything.
 ```
 src/app/        screens (Expo Router): sell, checkout, orders, home, reports, products, categories, events
 src/domain/     pure logic with tests: money, totals, discounts, payments, stock, reports, CSV
-src/data/       store.ts (records + outbox, saved on the device), sync.ts (Supabase), storage.*.ts
+src/data/       store.ts (records + outbox, saved on the device), sync.ts (Supabase), catalog.ts (public catalog), storage.*.ts
 src/ui/         shared components and the design tokens from the mock
 scripts/        icons.py: rebuilds the 3 KB icon font (add an Ionicons name, run it)
 supabase/       database schema and access rules

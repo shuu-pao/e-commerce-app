@@ -13,6 +13,7 @@ import { useAppState } from '@/data/hooks';
 import { loadFromDevice } from '@/data/store';
 import { authLinkAtStart, forgetAuthLink } from '@/data/supabase';
 import { startSync, syncEnabled } from '@/data/sync';
+import { Catalog } from '@/ui/Catalog';
 import { SetPassword } from '@/ui/SetPassword';
 import { Sidebar } from '@/ui/Sidebar';
 import { SignIn } from '@/ui/SignIn';
@@ -62,6 +63,10 @@ export default function RootLayout() {
 
 function Gate() {
   const email = useAppState((s) => s.settings.signedInEmail);
+  // A device that has synced before is the owner's: it goes straight to sign-in.
+  // Everyone else sees the public catalog first.
+  const ownerDevice = useAppState((s) => !!s.settings.lastPulledAt);
+  const [signingIn, setSigningIn] = useState(false);
   // Opened from an invitation or password-reset email: choose a password first.
   const [link, setLink] = useState(authLinkAtStart);
   useEffect(() => (email ? startSync() : undefined), [email]);
@@ -72,7 +77,10 @@ function Gate() {
     };
     return <SetPassword link={link} onDone={done} />;
   }
-  if (syncEnabled && !email) return <SignIn />;
+  if (syncEnabled && !email) {
+    if (ownerDevice || signingIn) return <SignIn onBack={ownerDevice ? undefined : () => setSigningIn(false)} />;
+    return <Catalog onSignIn={() => setSigningIn(true)} />;
+  }
   return <AppDrawer />;
 }
 

@@ -2,10 +2,10 @@ import { Icon } from '@/ui/Icon';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { centsToInput, parsePeso } from '@/domain/money';
-import { deltaToReach } from '@/domain/stock';
+import { deltaToReach, LOW_STOCK } from '@/domain/stock';
 import type { Id, Product } from '@/domain/types';
 import { useAppState, useLive, useStockLeft } from '@/data/hooks';
 import { adjustStock, newId, remove, save } from '@/data/store';
@@ -49,6 +49,7 @@ function Editor({ product }: { product: Product | undefined }) {
   const [priceText, setPriceText] = useState(product ? centsToInput(product.price) : '');
   const [categoryIds, setCategoryIds] = useState<Id[]>(product?.categoryIds ?? []);
   const [photo, setPhoto] = useState<string | null>(product?.photo ?? null);
+  const [showInCatalog, setShowInCatalog] = useState(product?.showInCatalog ?? false);
   const [variants, setVariants] = useState<VariantForm[]>(
     product?.variants.map((v) => ({ id: v.id, name: v.name, photo: v.photo, stockText: String(stock.get(v.id) ?? 0), isNew: false })) ?? [
       { id: newId(), name: '', photo: null, stockText: '0', isNew: true },
@@ -106,6 +107,7 @@ function Editor({ product }: { product: Product | undefined }) {
       categoryIds,
       photo,
       variants: variants.map((v) => ({ id: v.id, name: v.name.trim(), photo: v.photo })),
+      showInCatalog,
     });
     for (const v of variants) {
       const current = v.isNew ? 0 : (stock.get(v.id) ?? 0);
@@ -132,6 +134,22 @@ function Editor({ product }: { product: Product | undefined }) {
           <Field label="Title" value={name} onChangeText={setName} error={tried ? errors.name : null} />
           <Field label="Description" value={description} onChangeText={setDescription} multiline placeholder="Material, size…" />
           <Field label="Price (₱), the same for every colour" numeric value={priceText} onChangeText={setPriceText} error={tried || priceText ? errors.price : null} style={{ maxWidth: 260 }} />
+          <View style={[styles.catalog, showInCatalog && styles.catalogOn]}>
+            <Switch
+              value={showInCatalog}
+              onValueChange={setShowInCatalog}
+              accessibilityLabel="Show in catalog"
+              trackColor={{ false: colors.lineStrong, true: colors.accent }}
+              thumbColor={colors.white}
+              {...{ activeThumbColor: colors.white } /* react-native-web's name for the "on" thumb */}
+            />
+            <View style={styles.catalogText}>
+              <Txt weight="semibold">Show in catalog</Txt>
+              <Txt variant="small">
+                {showInCatalog ? 'Customers see this product at caracebu.expo.app. They never see the stock numbers.' : 'Hidden from the catalog. New products start hidden.'}
+              </Txt>
+            </View>
+          </View>
         </View>
       </View>
       {photoError ? <Txt color={colors.accent} weight="semibold">{photoError}</Txt> : null}
@@ -187,7 +205,13 @@ function Editor({ product }: { product: Product | undefined }) {
               value={v.stockText}
               onChangeText={(t) => setVariant(i, { stockText: t })}
               error={errors.stock(i)}
-              hint={!v.isNew && (stock.get(v.id) ?? 0) < 0 ? 'Oversold: sold more than counted.' : undefined}
+              hint={
+                !v.isNew && (stock.get(v.id) ?? 0) < 0
+                  ? 'Oversold: sold more than counted.'
+                  : showInCatalog && Number(v.stockText) > 0 && Number(v.stockText) <= LOW_STOCK
+                    ? 'Catalog shows Low on stock.'
+                    : undefined
+              }
               style={styles.variantStock}
             />
             {multi ? (
@@ -231,6 +255,9 @@ const styles = StyleSheet.create({
   bigPhoto: { width: 200, borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: colors.line },
   photoHint: { position: 'absolute', left: 8, bottom: 8, paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, backgroundColor: colors.white },
   fields: { flex: 1, minWidth: 280, gap: 14 },
+  catalog: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderWidth: 1, borderColor: colors.lineStrong, borderRadius: radius.lg },
+  catalogOn: { borderColor: colors.accent, backgroundColor: colors.accentSoft },
+  catalogText: { flex: 1, gap: 2 },
   section: { gap: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { minHeight: touch, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.lineStrong },

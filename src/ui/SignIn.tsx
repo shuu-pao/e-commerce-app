@@ -9,7 +9,7 @@ import { colors, radius } from './theme';
 import { Txt } from './Txt';
 
 /** One login for the shop owner, who joins by invitation (sign-ups are off). */
-export function SignIn() {
+export function SignIn({ onBack }: { onBack?: () => void }) {
   const [mode, setMode] = useState<'signIn' | 'forgot'>('signIn');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -90,6 +90,7 @@ export function SignIn() {
             ) : null}
             <Button label={lockSeconds ? `Try again in ${lockSeconds} s` : 'Sign in'} size="lg" onPress={submit} busy={busy} disabled={!!lockSeconds} />
             <Button label="Forgot password?" variant="ghost" onPress={() => switchTo('forgot')} style={styles.link} />
+            {onBack ? <Button label="Back to the catalog" variant="ghost" icon="chevron-back" onPress={onBack} style={styles.link} /> : null}
           </>
         ) : sent ? (
           <>

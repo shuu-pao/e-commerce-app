@@ -4,6 +4,7 @@ import { AppState as RNAppState, Platform } from 'react-native';
 
 import type { CollectionName, Collections } from '@/domain/types';
 
+import { publishPhotos } from './catalog';
 import * as store from './store';
 import { supabase } from './supabase';
 
@@ -117,6 +118,8 @@ export async function syncNow(force = false): Promise<void> {
   try {
     await push();
     await pull();
+    // The catalog's photos never hold up selling: a failure here only waits for the next sync.
+    await publishPhotos().catch((e: unknown) => console.warn('Uploading catalog photos failed', e));
     store.updateSync({ online: true, error: null, lastSyncedAt: new Date().toISOString() });
     failures = 0;
     retryAt = 0;

@@ -25,7 +25,7 @@ new session won't know it, so record it here in the same turn.
   (2026-10-22) adds every round 2 answer (shop name, cash change, split
   payment, online buyer details, the Online event); v4 (2026-10-24) adds
   row 4, the public catalog (computer and phone), and the Show in catalog
-  switch on Edit product, waiting for approval. Source:
+  switch on Edit product, approved by the client 2026-10-24. Source:
   read the canvas's files with the Artifact tool (scratchpad copies
   don't survive between sessions) and edit those.
 - **Question 3 is settled** (2026-10-19): no store apps. The app ships as
@@ -50,11 +50,11 @@ new session won't know it, so record it here in the same turn.
   syncing (`vcbdnggmzbtpqnldrxjl`); the developer's test login is in
   `shop_owners`. Redeploy after changes: `npm run build:web`, then
   `npx eas-cli@latest deploy --prod`.
+- **The public catalog is built** (2026-10-24, mock v4 approved by the
+  client): see "Public catalog" below and README. Before it works live: run
+  the migration again in Supabase's SQL Editor, then deploy.
 - Next: Supabase Site URL and redirect URLs, invite the client, install on
   the iPad (README). The keep-awake ping works (GitHub secrets set, tested 2026-10-22).
-  Then the public catalog (plan below; round 3 answered 2026-10-24):
-  catalog screens are in mock v4, waiting for the developer's and the
-  client's OK; then build.
 
 ## Build notes (version 1, 2026-10-22)
 
@@ -171,7 +171,7 @@ None. The client answered round 3 (the public catalog) on 2026-10-24
 (Decisions below). New client questions get batched here and asked all at
 once; never trickle them out one reply at a time.
 
-## Public catalog (plan, 2026-10-24, not built yet)
+## Public catalog (built 2026-10-24)
 
 What it shows (client, round 3): title, photo, description, price,
 colours. Never the stock count: a colour or product with no stock shows
@@ -205,6 +205,18 @@ sign-ups stay off.
 - Trade-offs: visitors download the app's code (1.7 MB before
   compression); link previews are the same for every product (one-page
   app).
+- Build notes: `public.catalog()` computes stock the same way as the app
+  (stock changes minus pieces in non-deleted orders) and returns only
+  'out'/'low'. Photo files are named by the SHA-256 of the data URL on
+  both sides (`catalog_photo_path()` in SQL, `src/data/catalog.ts`); each
+  device remembers what it uploaded (`settings.publishedPhotos`); old files
+  are never deleted (fine until ~10,000 photos). A device that has synced
+  before (`lastPulledAt`) opens on sign-in, everyone else on the catalog
+  (`Gate` in `_layout.tsx`); the outbox can't tell them apart because every
+  new device queues the Online event. The browser's Back button closes an
+  open product. Tested: `npm run test:db` (catalog rules, photo names,
+  upload rights) and in Chromium at desktop and phone sizes with sample
+  data; not yet against the live project.
 
 ## Offline plan (approved 2026-10-20)
 
@@ -426,4 +438,5 @@ and the desktop it's a sidebar that stays open.
 | 2026-10-22 | The owner joins by invitation and sets their own password; forgot and change password in the app; no public sign-up (developer) |
 | 2026-10-23 | Rate limiting: Supabase's auth limits plus app-side sign-in cooldown, reset-email cooldown, sync back-off, and upload size limits in the database (build) |
 | 2026-10-24 | Public catalog in the same app and address: no login shows the catalog, the owner's login shows the cashier; no customer accounts (client asked, developer agreed) |
+| 2026-10-24 | Mock v4 (public catalog) approved by the client; catalog built (build) |
 | 2026-10-24 | Catalog shows prices; "Sold out" and "Low on stock" (5 pieces or fewer) instead of stock counts; only products switched to "Show in catalog"; a "Message us on Instagram" button opens instagram.com/caracebu (client, round 3) |
