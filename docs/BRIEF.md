@@ -50,9 +50,10 @@ new session won't know it, so record it here in the same turn.
   syncing (`vcbdnggmzbtpqnldrxjl`); the developer's test login is in
   `shop_owners`. Redeploy after changes: `npm run build:web`, then
   `npx eas-cli@latest deploy --prod`.
-- **The public catalog is built** (2026-10-24, mock v4 approved by the
-  client): see "Public catalog" below and README. Before it works live: run
-  the migration again in Supabase's SQL Editor, then deploy.
+- **The public catalog is live** (2026-10-24, mock v4 approved by the
+  client): migration re-run in Supabase, deployed; caracebu.expo.app shows
+  the catalog to visitors. See "Public catalog" below and README. Still to
+  check: a real product switched on, with its photo uploaded.
 - Next: Supabase Site URL and redirect URLs, invite the client, install on
   the iPad (README). The keep-awake ping works (GitHub secrets set, tested 2026-10-22).
 
