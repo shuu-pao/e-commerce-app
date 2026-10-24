@@ -47,8 +47,9 @@ new session won't know it, so record it here in the same turn.
   the client. Settled; don't ask about it again.
 - **Live** (2026-10-22): https://caracebu.expo.app (EAS Hosting, project
   `e473654f-7eea-4415-bf97-c365ef3de33d`). Supabase project set up and
-  syncing (`vcbdnggmzbtpqnldrxjl`); the developer's test login is in
-  `shop_owners`. Redeploy after changes: `npm run build:web`, then
+  syncing (`vcbdnggmzbtpqnldrxjl`). The live data is the client's alone:
+  the developer's test login comes off `shop_owners` (2026-10-24) and
+  testing never uses the live project (Testing, below). Redeploy after changes: `npm run build:web`, then
   `npx eas-cli@latest deploy --prod`.
 - **The public catalog is live** (2026-10-24, mock v4 approved by the
   client): migration re-run in Supabase, deployed; caracebu.expo.app shows
@@ -134,6 +135,17 @@ new session needs to know beyond that:
   The migration file is safe to re-run; re-run it to apply changes.
 - `npm audit` lists issues in Expo's build tooling (config plugins), not in
   code that ships to the browser; they clear with Expo SDK updates.
+
+## Testing (2026-10-24)
+
+The live Supabase project holds the client's real data; never test there,
+and never put a test login in `shop_owners`. Supabase's free plan allows
+two projects and the developer has none left, so there is no test project.
+Test with: device-only mode (`EXPO_PUBLIC_SUPABASE_URL=
+EXPO_PUBLIC_SUPABASE_ANON_KEY= npx expo start --web`), `npm run test:db`
+(the migration in PGlite), and stubbed network responses in Playwright.
+If sync or sign-in ever need a real server, run Supabase locally (Supabase
+CLI, needs Docker); not set up.
 
 ## Who's who
 
@@ -439,5 +451,6 @@ and the desktop it's a sidebar that stays open.
 | 2026-10-22 | The owner joins by invitation and sets their own password; forgot and change password in the app; no public sign-up (developer) |
 | 2026-10-23 | Rate limiting: Supabase's auth limits plus app-side sign-in cooldown, reset-email cooldown, sync back-off, and upload size limits in the database (build) |
 | 2026-10-24 | Public catalog in the same app and address: no login shows the catalog, the owner's login shows the cashier; no customer accounts (client asked, developer agreed) |
+| 2026-10-24 | The live data belongs to the client's login only; the developer's test login is removed from `shop_owners`, and testing stays off the live project (developer) |
 | 2026-10-24 | Mock v4 (public catalog) approved by the client; catalog built (build) |
 | 2026-10-24 | Catalog shows prices; "Sold out" and "Low on stock" (5 pieces or fewer) instead of stock counts; only products switched to "Show in catalog"; a "Message us on Instagram" button opens instagram.com/caracebu (client, round 3) |
