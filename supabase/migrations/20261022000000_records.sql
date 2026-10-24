@@ -171,6 +171,8 @@ language sql stable security definer set search_path = '' as $$
     'categories', coalesce((
       select jsonb_agg(jsonb_build_object('id', c.data->>'id', 'name', c.data->>'name') order by c.data->>'name')
       from public.records c where c.collection = 'categories' and not c.deleted
+        -- only categories that hold a catalog product, so other category names stay private
+        and c.data->>'id' in (select jsonb_array_elements_text(d->'categoryIds') from shown)
     ), '[]'::jsonb)
   );
 $$;

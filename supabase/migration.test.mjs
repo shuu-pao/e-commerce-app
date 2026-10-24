@@ -95,9 +95,11 @@ const P1 = 'eeeeeeee-0000-4000-8000-000000000001';
 const P2 = 'eeeeeeee-0000-4000-8000-000000000002';
 const photo = 'data:image/jpeg;base64,AAAA';
 await push(OWNER, [
-  rec('products', P1, { name: 'Daisy claw clip', description: 'Acetate', price: 12000, categoryIds: [], photo, showInCatalog: true,
+  rec('categories', 'eeeeeeee-0000-4000-8000-000000000031', { name: 'Hairclips' }),
+  rec('categories', 'eeeeeeee-0000-4000-8000-000000000032', { name: 'Secret' }),
+  rec('products', P1, { name: 'Daisy claw clip', description: 'Acetate', price: 12000, categoryIds: ['eeeeeeee-0000-4000-8000-000000000031'], photo, showInCatalog: true,
     variants: [{ id: 'v-yellow', name: 'Yellow', photo: null }, { id: 'v-white', name: 'White', photo: null }, { id: 'v-pink', name: 'Pink', photo: null }] }),
-  rec('products', P2, { name: 'Hidden', description: '', price: 100, categoryIds: [], photo: null, variants: [{ id: 'v-h', name: '', photo: null }] }),
+  rec('products', P2, { name: 'Hidden', description: '', price: 100, categoryIds: ['eeeeeeee-0000-4000-8000-000000000032'], photo: null, variants: [{ id: 'v-h', name: '', photo: null }] }),
   rec('stock', 'eeeeeeee-0000-4000-8000-000000000011', { productId: P1, variantId: 'v-yellow', delta: 8 }),
   rec('stock', 'eeeeeeee-0000-4000-8000-000000000012', { productId: P1, variantId: 'v-white', delta: 4 }),
   rec('orders', 'eeeeeeee-0000-4000-8000-000000000021', { number: 50, lines: [{ variantId: 'v-yellow', qty: 2 }] }),
@@ -107,6 +109,7 @@ const cat = (await db.query('select public.catalog() as c')).rows[0].c;
 await assert.rejects(db.query('select * from public.records'), /permission denied/, 'anon reads no records directly');
 await db.exec('reset role;');
 assert.deepEqual(cat.products.map((p) => p.name), ['Daisy claw clip'], 'only switched-on products');
+assert.deepEqual(cat.categories.map((c) => c.name), ['Hairclips'], 'only categories of shown products');
 const daisy = cat.products[0];
 assert.deepEqual(daisy.variants.map((v) => v.stock), [null, 'low', 'out'], 'yellow 6 left, white 4, pink 0');
 assert.equal(daisy.stock, null, '10 left in total');
