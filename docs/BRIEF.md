@@ -418,5 +418,5 @@ and the desktop it's a sidebar that stays open.
 | 2026-10-22 | Photos stored in the product record as small square JPEGs (build) |
 | 2026-10-22 | Only users in `shop_owners` can read or write; sign-ups off (build) |
 | 2026-10-22 | The owner joins by invitation and sets their own password; forgot and change password in the app; no public sign-up (developer) |
-| 2026-10-24 | Public catalog in the same app and address: no login shows the catalog, the owner's login shows the cashier; no customer accounts (client asked, developer agreed; details wait on round 3) |
 | 2026-10-23 | Rate limiting: Supabase's auth limits plus app-side sign-in cooldown, reset-email cooldown, sync back-off, and upload size limits in the database (build) |
+| 2026-10-24 | Public catalog in the same app and address: no login shows the catalog, the owner's login shows the cashier; no customer accounts (client asked, developer agreed; details wait on round 3) |
