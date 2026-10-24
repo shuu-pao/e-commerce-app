@@ -23,7 +23,9 @@ new session won't know it, so record it here in the same turn.
   https://claude.ai/artifact/6YRqzABYuB7ggZm37rpgmA. v1 (phone screens)
   went to the client on 2026-10-17; v2 (2026-10-20) replaced it; v3
   (2026-10-22) adds every round 2 answer (shop name, cash change, split
-  payment, online buyer details, the Online event). Source:
+  payment, online buyer details, the Online event); v4 (2026-10-24) adds
+  row 4, the public catalog (computer and phone), and the Show in catalog
+  switch on Edit product, waiting for approval. Source:
   read the canvas's files with the Artifact tool (scratchpad copies
   don't survive between sessions) and edit those.
 - **Question 3 is settled** (2026-10-19): no store apps. The app ships as
@@ -51,7 +53,8 @@ new session won't know it, so record it here in the same turn.
 - Next: Supabase Site URL and redirect URLs, invite the client, install on
   the iPad (README). The keep-awake ping works (GitHub secrets set, tested 2026-10-22).
   Then the public catalog (plan below; round 3 answered 2026-10-24):
-  catalog screens in the mock for approval first, then build.
+  catalog screens are in mock v4, waiting for the developer's and the
+  client's OK; then build.
 
 ## Build notes (version 1, 2026-10-22)
 
