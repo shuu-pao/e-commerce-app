@@ -180,9 +180,22 @@ the developer.
 
 ## Open questions
 
-None. The client answered round 3 (the public catalog) on 2026-10-24
+The client answered round 3 (the public catalog) on 2026-10-24
 (Decisions below). New client questions get batched here and asked all at
 once; never trickle them out one reply at a time.
+
+Round 4, the logo (proposal 2026-10-26, not sent yet):
+https://claude.ai/artifact/FMhZmyUuQEQSUkzde9PhzY. The tab and Home
+Screen icon are still a placeholder (white "c" on berry). The caracebu
+logo is "cara / cebu" set in Shrikhand (free Google Font, matches letter
+for letter), red `#EE3C4C` on pink `#FEEBE7`. Proposal: wordmark in the
+catalog header, sidebar, sign-in and loading skeleton; a Shrikhand "c" as
+the favicon; the full stacked logo as the Home Screen icon; load only the
+six letters (subset font or SVG). Nothing built until the client answers.
+1. May we put the logo in the app (tab, Home Screen icon, catalog
+   header, sidebar, sign-in)?
+2. Keep today's berry buttons, or change them to a deeper logo red
+   (`#C8283A`; the logo red itself is too faint for white button text)?
 
 ## Public catalog (built 2026-10-24)
 
