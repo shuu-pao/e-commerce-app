@@ -70,7 +70,7 @@ export function SignIn({ onBack }: { onBack?: () => void }) {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.page}>
       <View style={styles.card}>
-        <Txt variant="title">caracebu</Txt>
+        <Txt variant="brand" style={styles.brand} accessibilityLabel="caracebu">{'cara\ncebu'}</Txt>
         {mode === 'signIn' ? (
           <>
             <Txt color={colors.body}>Sign in to sell and see your orders.</Txt>
@@ -135,6 +135,7 @@ export function SignIn({ onBack }: { onBack?: () => void }) {
 }
 
 const styles = StyleSheet.create({
+  brand: { fontSize: 32, lineHeight: 32, textAlign: 'center', paddingTop: 4 },
   page: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: colors.surface },
   card: { width: '100%', maxWidth: 400, gap: 16, padding: 28, borderRadius: radius.lg + 2, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line },
   link: { alignSelf: 'center' },

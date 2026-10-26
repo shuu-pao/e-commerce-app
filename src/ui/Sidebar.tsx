@@ -34,7 +34,7 @@ export function Sidebar({ navigation, permanent }: Props) {
   return (
     <View style={[styles.wrap, { paddingTop: insets.top + 18, paddingBottom: insets.bottom + 12 }]}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Txt weight="bold" style={styles.brand}>caracebu</Txt>
+        <Txt variant="brand" style={styles.brand}>caracebu</Txt>
         <Item label="Home" active={pathname === '/home'} onPress={() => go('/home')} />
         <Item label="Sell" active={false} onPress={() => go('/sell')} />
         <Item label="All products" sub active={onSell && !category} onPress={() => go('/sell')} />
@@ -217,7 +217,7 @@ function UpdateBanner() {
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: colors.surface, borderRightWidth: 1, borderRightColor: colors.line },
   scroll: { paddingRight: 12 },
-  brand: { fontSize: 19, paddingHorizontal: 20, paddingBottom: 14 },
+  brand: { paddingHorizontal: 20, paddingBottom: 12 },
   item: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 20, borderTopRightRadius: radius.pill, borderBottomRightRadius: radius.pill },
   sub: { minHeight: 38, paddingLeft: 34 },
   itemText: { fontFamily: fonts.medium, fontSize: 15 },

@@ -133,6 +133,14 @@ new session needs to know beyond that:
   box retries at once); `push_records` refuses more than 500 records per
   upload or a record over 4 MB, and the app uploads at most 200 at a time.
   The migration file is safe to re-run; re-run it to apply changes.
+- **Logo** (2026-10-27): the caracebu logo is "cara / cebu" in Shrikhand
+  (free Google Font), red `#EE3C4C` on pink `#FEEBE7`. `scripts/brand.py`
+  subsets the font to the letters of "caracebu" (`assets/fonts/brand.ttf`,
+  3 KB, `Txt variant="brand"`), inlines it in `public/index.html` for the
+  skeleton, and draws the Home Screen icons (`public/icons`, letters inside
+  the maskable safe circle). The browser tab icon stays the placeholder
+  "c" (`assets/images/favicon.png`) and buttons stay berry, per the client.
+  Proposal page: https://claude.ai/artifact/FMhZmyUuQEQSUkzde9PhzY.
 - `npm audit` lists issues in Expo's build tooling (config plugins), not in
   code that ships to the browser; they clear with Expo SDK updates.
 
@@ -180,22 +188,9 @@ the developer.
 
 ## Open questions
 
-The client answered round 3 (the public catalog) on 2026-10-24
+None. The client answered round 4 (the logo) on 2026-10-27
 (Decisions below). New client questions get batched here and asked all at
 once; never trickle them out one reply at a time.
-
-Round 4, the logo (proposal 2026-10-26, not sent yet):
-https://claude.ai/artifact/FMhZmyUuQEQSUkzde9PhzY. The tab and Home
-Screen icon are still a placeholder (white "c" on berry). The caracebu
-logo is "cara / cebu" set in Shrikhand (free Google Font, matches letter
-for letter), red `#EE3C4C` on pink `#FEEBE7`. Proposal: wordmark in the
-catalog header, sidebar, sign-in and loading skeleton; a Shrikhand "c" as
-the favicon; the full stacked logo as the Home Screen icon; load only the
-six letters (subset font or SVG). Nothing built until the client answers.
-1. May we put the logo in the app (tab, Home Screen icon, catalog
-   header, sidebar, sign-in)?
-2. Keep today's berry buttons, or change them to a deeper logo red
-   (`#C8283A`; the logo red itself is too faint for white button text)?
 
 ## Public catalog (built 2026-10-24)
 
@@ -467,3 +462,4 @@ and the desktop it's a sidebar that stays open.
 | 2026-10-24 | The live data belongs to the client's login only; the developer's test login is removed from `shop_owners`, and testing stays off the live project (developer) |
 | 2026-10-24 | Mock v4 (public catalog) approved by the client; catalog built (build) |
 | 2026-10-24 | Catalog shows prices; "Sold out" and "Low on stock" (5 pieces or fewer) instead of stock counts; only products switched to "Show in catalog"; a "Message us on Instagram" button opens instagram.com/caracebu (client, round 3) |
+| 2026-10-27 | Logo in the app: wordmark in the catalog header, sidebar, sign-in and loading screen; the full logo as the Home Screen icon. The browser tab icon and the berry buttons stay as they are (client, round 4) |

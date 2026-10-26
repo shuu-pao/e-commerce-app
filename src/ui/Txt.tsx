@@ -8,6 +8,7 @@ const variants = StyleSheet.create({
   body: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 21, color: colors.ink },
   small: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18, color: colors.muted },
   label: { fontFamily: fonts.bold, fontSize: 12, lineHeight: 16, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.muted },
+  brand: { fontFamily: fonts.brand, fontSize: 21, lineHeight: 28, color: colors.brand },
   big: { fontFamily: fonts.bold, fontSize: 26, lineHeight: 32, color: colors.ink, fontVariant: ['tabular-nums'] },
 });
 

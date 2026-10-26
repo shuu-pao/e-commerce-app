@@ -9,6 +9,7 @@ export const colors = {
   surface: '#FAF8F7',
   raised: '#F3EFEE',
   white: '#FFFFFF',
+  brand: '#EE3C4C', // the logo's red; for the logo only, too faint for text on buttons
   accent: '#A3264F',
   accentDark: '#7E1C3D',
   accentSoft: '#F7EBEF',
@@ -26,6 +27,7 @@ export const fonts = {
   medium: 'Figtree_500Medium',
   semibold: 'Figtree_600SemiBold',
   bold: 'Figtree_700Bold',
+  brand: 'Shrikhand', // the logo's font, only the letters of "caracebu" (scripts/brand.py)
 } as const;
 
 export type Weight = keyof typeof fonts;

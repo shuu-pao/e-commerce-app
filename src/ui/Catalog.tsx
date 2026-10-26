@@ -122,7 +122,7 @@ export function Catalog({ onSignIn }: { onSignIn: () => void }) {
     <View style={styles.page}>
       <View style={[styles.bar, { paddingTop: insets.top }]}>
         <View style={styles.barInner}>
-          <Txt weight="bold" style={styles.brand}>caracebu</Txt>
+          <Txt variant="brand" style={styles.brand}>caracebu</Txt>
           <Button label="Instagram @caracebu" variant="outline" onPress={openInstagram} />
         </View>
       </View>
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: colors.white },
   bar: { backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.line },
   barInner: { width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: PAD, paddingVertical: 10 },
-  brand: { flex: 1, fontSize: 22, lineHeight: 28 },
+  brand: { flex: 1, fontSize: 24, lineHeight: 32 },
   list: { flex: 1 },
   listContent: { width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center', paddingHorizontal: PAD - 8, flexGrow: 1 },
   listTop: { gap: 14, paddingHorizontal: 8, paddingTop: 20, paddingBottom: 8 },

@@ -23,7 +23,13 @@ import { Txt } from '@/ui/Txt';
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const [fontsLoaded, fontError] = useFonts({ Figtree_400Regular, Figtree_500Medium, Figtree_600SemiBold, Figtree_700Bold });
+  const [fontsLoaded, fontError] = useFonts({
+    Figtree_400Regular,
+    Figtree_500Medium,
+    Figtree_600SemiBold,
+    Figtree_700Bold,
+    Shrikhand: require('../../assets/fonts/brand.ttf'),
+  });
   const ready = useAppState((s) => s.ready);
   const [loadError, setLoadError] = useState<string | null>(null);
 
