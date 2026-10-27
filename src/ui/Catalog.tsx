@@ -217,7 +217,12 @@ function Detail({ product, backLabel, onBack }: { product: CatalogProduct; backL
             <Txt variant="big">{formatPeso(product.price)}</Txt>
             <StockTag stock={product.stock} />
           </View>
-          {product.description ? <Txt color={colors.body} style={styles.description}>{product.description}</Txt> : null}
+          {product.description ? (
+            <Txt color={colors.body} style={styles.description}>
+              {/* **words** show in bold, as in ChatGPT and chat apps; splitting puts them at odd indexes (client, 2026-10-28) */}
+              {product.description.split(/\*\*(.+?)\*\*/).map((part, i) => (i % 2 ? <Txt key={i} weight="bold" color={colors.ink}>{part}</Txt> : part))}
+            </Txt>
+          ) : null}
           {colours.length ? (
             <View style={styles.colours}>
               <Txt weight="semibold">Colours</Txt>

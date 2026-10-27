@@ -211,10 +211,9 @@ Shopee allows 9 photos per product, Shopify one photo per variant.
 2. Are up to 6 photos per product and 3 per colour enough?
 3. Catalog: when a colour is picked, show only that colour's photos, or
    all photos in one row?
-4. Stars in descriptions: the client typed `**Details**` for bold, and
-   the catalog shows the stars. (a) the app shows words between two
-   stars in bold, or (b) she deletes the stars. Reworded on the mock
-   2026-10-27 because the first wording wasn't clear to her.
+4. Answered 2026-10-28: (a), words between two stars show in bold in
+   the catalog (Decisions). Questions 1 to 3 still wait; build nothing
+   for them until she answers.
 
 ## Public catalog (built 2026-10-24)
 
@@ -488,3 +487,4 @@ and the desktop it's a sidebar that stays open.
 | 2026-10-24 | Catalog shows prices; "Sold out" and "Low on stock" (5 pieces or fewer) instead of stock counts; only products switched to "Show in catalog"; a "Message us on Instagram" button opens instagram.com/caracebu (client, round 3) |
 | 2026-10-27 | Logo in the app: wordmark in the catalog header, sidebar, sign-in and loading screen; the full logo as the Home Screen icon. The browser tab icon and the berry buttons stay as they are (client, round 4) |
 | 2026-10-27 | A catalog product opens on its own photo with no colour picked; tapping a colour shows that colour's photo, tapping it again unpicks it (client) |
+| 2026-10-28 | In catalog descriptions, words between two stars (`**Details**`) show in bold and the stars disappear; everything else shows as typed (client, round 5 question 4) |
