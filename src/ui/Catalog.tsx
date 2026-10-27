@@ -199,7 +199,8 @@ function Card({ product, columns, onPress }: { product: CatalogProduct; columns:
 function Detail({ product, backLabel, onBack }: { product: CatalogProduct; backLabel: string; onBack: () => void }) {
   const insets = useSafeAreaInsets();
   const colours = product.variants.length > 1 ? product.variants : [];
-  // No colour picked on open, so the product's own photo shows first (client, 2026-10-27).
+  // No colour picked on open, so the product's own photo shows first; tapping the picked colour
+  // again unpicks it and brings that photo back (client, 2026-10-27).
   const [colourId, setColourId] = useState<string | null>(null);
   const colour = colours.find((v) => v.id === colourId) ?? null;
   const photo = colour?.photo ?? product.photo ?? product.variants[0]?.photo ?? null;
@@ -228,7 +229,7 @@ function Detail({ product, backLabel, onBack }: { product: CatalogProduct; backL
                     accessibilityRole="button"
                     accessibilityLabel={`${v.name}${stockText(v.stock)}`}
                     accessibilityState={{ selected: on }}
-                    onPress={() => setColourId(v.id)}
+                    onPress={() => setColourId(on ? null : v.id)}
                     style={({ hovered }) => [styles.colour, (on || hovered) && { borderColor: colors.accent }]}
                   >
                     <Photo uri={v.photo ?? product.photo} name={v.name} size={44} />
