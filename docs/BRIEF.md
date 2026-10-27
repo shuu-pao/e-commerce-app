@@ -211,8 +211,10 @@ Shopee allows 9 photos per product, Shopify one photo per variant.
 2. Are up to 6 photos per product and 3 per colour enough?
 3. Catalog: when a colour is picked, show only that colour's photos, or
    all photos in one row?
-4. Descriptions: the client typed `**Details**` for bold, and the
-   catalog shows the asterisks. Show bold, or remove the asterisks?
+4. Stars in descriptions: the client typed `**Details**` for bold, and
+   the catalog shows the stars. (a) the app shows words between two
+   stars in bold, or (b) she deletes the stars. Reworded on the mock
+   2026-10-27 because the first wording wasn't clear to her.
 
 ## Public catalog (built 2026-10-24)
 
