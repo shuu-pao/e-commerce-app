@@ -199,7 +199,8 @@ function Card({ product, columns, onPress }: { product: CatalogProduct; columns:
 function Detail({ product, backLabel, onBack }: { product: CatalogProduct; backLabel: string; onBack: () => void }) {
   const insets = useSafeAreaInsets();
   const colours = product.variants.length > 1 ? product.variants : [];
-  const [colourId, setColourId] = useState(colours[0]?.id ?? null);
+  // No colour picked on open, so the product's own photo shows first (client, 2026-10-27).
+  const [colourId, setColourId] = useState<string | null>(null);
   const colour = colours.find((v) => v.id === colourId) ?? null;
   const photo = colour?.photo ?? product.photo ?? product.variants[0]?.photo ?? null;
   return (

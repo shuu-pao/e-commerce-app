@@ -463,3 +463,4 @@ and the desktop it's a sidebar that stays open.
 | 2026-10-24 | Mock v4 (public catalog) approved by the client; catalog built (build) |
 | 2026-10-24 | Catalog shows prices; "Sold out" and "Low on stock" (5 pieces or fewer) instead of stock counts; only products switched to "Show in catalog"; a "Message us on Instagram" button opens instagram.com/caracebu (client, round 3) |
 | 2026-10-27 | Logo in the app: wordmark in the catalog header, sidebar, sign-in and loading screen; the full logo as the Home Screen icon. The browser tab icon and the berry buttons stay as they are (client, round 4) |
+| 2026-10-27 | A catalog product opens on its own photo with no colour picked; tapping a colour shows that colour's photo (client) |
