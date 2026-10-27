@@ -25,7 +25,9 @@ new session won't know it, so record it here in the same turn.
   (2026-10-22) adds every round 2 answer (shop name, cash change, split
   payment, online buyer details, the Online event); v4 (2026-10-24) adds
   row 4, the public catalog (computer and phone), and the Show in catalog
-  switch on Edit product, approved by the client 2026-10-24. Source:
+  switch on Edit product, approved by the client 2026-10-24; v5
+  (2026-10-27) adds row 5, the client's new requests (not built, waiting
+  on round 5 below). Source:
   read the canvas's files with the Artifact tool (scratchpad copies
   don't survive between sessions) and edit those.
 - **Question 3 is settled** (2026-10-19): no store apps. The app ships as
@@ -188,9 +190,29 @@ the developer.
 
 ## Open questions
 
-None. The client answered round 4 (the logo) on 2026-10-27
-(Decisions below). New client questions get batched here and asked all at
-once; never trickle them out one reply at a time.
+The client answered round 4 (the logo) on 2026-10-27 (Decisions below).
+New client questions get batched here and asked all at once; never
+trickle them out one reply at a time.
+
+Round 5 (2026-10-27, in the mock's row 5 and its orange note; not sent
+yet). The client asked for: several photos on a product and on each
+colour; categories to pick on top of Products, like the catalog; the
+catalog opening on the main product photos first. Mock v5 proposes: up
+to 6 product photos (the first is the cover, "Make cover" reorders) and
+3 per colour; category chips plus "No category" filtering the Products
+list; a catalog gallery (big photo plus small ones) that starts on the
+product photos, shows only the picked colour's photos, and goes back on
+a second tap. Cashier screens and receipts keep one photo: the colour's
+first. Limits behind the numbers: photos live in the product record
+(about 60 to 90 KB each) and `push_records` refuses a record over 4 MB;
+Shopee allows 9 photos per product, Shopify one photo per variant.
+1. Products: is picking a category at the top to show only those
+   products what you meant?
+2. Are up to 6 photos per product and 3 per colour enough?
+3. Catalog: when a colour is picked, show only that colour's photos, or
+   all photos in one row?
+4. Descriptions: the client typed `**Details**` for bold, and the
+   catalog shows the asterisks. Show bold, or remove the asterisks?
 
 ## Public catalog (built 2026-10-24)
 
