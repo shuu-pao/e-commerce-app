@@ -59,11 +59,14 @@ new session won't know it, so record it here in the same turn.
   2026-11-05: 6 real products show, with their photos.
 - Next: Supabase Site URL and redirect URLs, invite the client, install on
   the iPad (README). The keep-awake ping works (GitHub secrets set, tested 2026-10-22).
-- **2026-11-06, committed, not deployed yet:** the Safari 12 s font stall
-  fix, getAll, the service worker only on owner devices, and the Products
-  category chips (Build notes, Decisions). Deploying makes the owner's
-  devices reload once, a few seconds after the app next opens (their old
-  update code); deploy when she isn't at an event.
+- **Deployed 2026-11-06:** the Safari 12 s font stall fix, getAll, the
+  service worker only on owner devices, the Products category chips and
+  the catalog gallery (Build notes, Decisions). The owner's devices reload
+  once, a few seconds after the app next opens (their old update code).
+  Live check in WebKit at iPad size (2 visits, no throttling): products
+  drawn at 2.9 s on the first visit after the deploy (cold), 1.1 s on the
+  next; the app took over 0.2-0.3 s later (was 12 s); grid photos load
+  the 480 px copies. Waiting on the client's retest on her iPhone and iPad.
 - **Waiting on the developer (2026-11-06):** how to store several photos
   (round 5). Her 37 photos average 65 KB, largest 163 KB; a 10-colour
   product at the full limits (36 photos) is 3.2 MB at average size, up
