@@ -139,7 +139,7 @@ new session needs to know beyond that:
   the copies with the photos after a sync, and the grid falls back to the
   full photo until it has. The product page keeps the 600 px photos.
   Then (2026-11-06, the client found it slow on the iPad, fine on her
-  phone; not reproduced in WebKit, so likely the iPad's age or Wi-Fi):
+  phone; the real cause turned out to be the Safari font stall below):
   for visitors, `public/index.html` draws the catalog itself from that
   early request, before the app's code runs (same sizes as
   `src/ui/Catalog.tsx`; keep the two in step when the grid changes). The
