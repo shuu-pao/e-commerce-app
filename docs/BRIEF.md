@@ -67,8 +67,15 @@ new session needs to know beyond that:
 
 - **Web output is `single`** (one-page app) so the service worker can serve
   it offline; any host must send unknown paths to `/index.html`.
-  `npm run build:web` = `expo export` + Workbox (`workbox-config.cjs`). New
-  versions wait for the seller to tap Reload in the sidebar.
+  `npm run build:web` = `expo export` + `scripts/head.mjs` + Workbox
+  (`workbox-config.cjs`). Only the owner's devices register the service
+  worker (any device that has signed in or synced: a `caracebu-owner`
+  flag or a Supabase session in localStorage); visitors' browsers remove
+  an old one, so they always get the newest version from the network. A
+  new version takes over the next time the app opens, never mid-sale (the
+  open page keeps the code it loaded); Reload in the sidebar applies it
+  at once (2026-11-06; until then every visitor got the worker and Safari
+  kept old versions, since only the cashier has Reload).
 - **Data**: every record is saved on the device first (IndexedDB on the
   web, SQLite key-value on native) with an outbox; `src/data/sync.ts`
   pushes through the `push_records` function and pulls rows newer than the
@@ -143,6 +150,18 @@ new session needs to know beyond that:
   (photos and code share the connection; was 4.4 / 7.8 / 4.5). After
   15 s without the app the loading screen offers Reload (the code may
   have failed, e.g. the host's rate limit).
+- **Safari font stall** (found 2026-11-06, the client's "slow in a new
+  tab", Chrome on her iPhone, which is WebKit): expo-font waits on
+  `document.fonts.load()`, which WebKit (Safari 26.2 regression, WebKit
+  bug 305470) can leave unanswered, so every app start sat on the loading
+  screen until expo-font's 12 s timeout. On the web the app no longer
+  waits for fonts (`src/app/_layout.tsx`); the fonts still apply as they
+  arrive (no visible swap in tests). Also: the device's data loads with
+  IndexedDB `getAll` instead of a cursor (WebKit stepped a cursor at
+  ~15 ms a record in Playwright's WebKit: 9 s for 610 records), and the
+  early catalog request is a plain GET with the key in the address (no
+  CORS preflight). Cashier start in WebKit with 612 records: 12.6 s to
+  0.3-0.5 s. Not yet tried on a real iPhone or iPad.
 - **Monkey testing** (2026-10-22): 2,500 random actions in device-only
   mode (taps, junk input, back, reload, resizing). No crashes, console
   errors or blank screens; one bug found and fixed ("undefined" flashing in
@@ -498,6 +517,7 @@ and the desktop it's a sidebar that stays open.
 | 2026-10-22 | Reports set confirmed: per day, week, month, event or chosen dates, best sellers, payment methods, Excel download (client, questions 12 and 23) |
 | 2026-10-22 | Only Home hides amounts; All orders and Reports show them (client) |
 | 2026-10-22 | Web output `single`; offline through a Workbox service worker; updates wait for Reload (build) |
+| 2026-11-06 | The service worker only on the owner's devices; a new version takes over the next time the app opens, never mid-sale, and Reload applies it now. Replaces "updates wait for Reload" (build) |
 | 2026-10-22 | Stock is a ledger (stock changes minus sold pieces), not a stored number, so two devices can't overwrite each other (build) |
 | 2026-10-22 | Photos stored in the product record as small square JPEGs (build) |
 | 2026-10-22 | Only users in `shop_owners` can read or write; sign-ups off (build) |

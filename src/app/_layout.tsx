@@ -38,7 +38,11 @@ export default function RootLayout() {
     loadFromDevice().catch((e: unknown) => setLoadError(e instanceof Error ? e.message : String(e)));
   }, []);
 
-  const show = (fontsLoaded || !!fontError) && (ready || !!loadError);
+  // On the web, don't wait for the fonts: Safari 26 can leave the promise expo-font waits on
+  // unanswered, so every page sat on the loading screen until expo-font's 12 s timeout
+  // (measured 2026-11-06, WebKit bug 305470). The fonts still apply the moment they arrive.
+  const fontsReady = Platform.OS === 'web' || fontsLoaded || !!fontError;
+  const show = fontsReady && (ready || !!loadError);
   useEffect(() => {
     if (!show) return;
     void SplashScreen.hideAsync();
@@ -72,9 +76,12 @@ function Gate() {
   // Opened from an invitation or password-reset email: choose a password first.
   const [link, setLink] = useState(authLinkAtStart);
   useEffect(() => (email ? startSync() : undefined), [email]);
-  // public/index.html paints the catalog for visitors and the Sell screen's shapes for this flag.
+  // An owner's device (public/index.html): the Sell screen's shapes while loading, and the
+  // offline support, registered now so the first sign-in already makes the device sell offline.
   useEffect(() => {
-    if (Platform.OS === 'web' && (ownerDevice || email)) localStorage.setItem('caracebu-owner', '1');
+    if (Platform.OS !== 'web' || !(ownerDevice || email)) return;
+    localStorage.setItem('caracebu-owner', '1');
+    (window as { __registerSW?: () => void }).__registerSW?.();
   }, [ownerDevice, email]);
   const catalog = syncEnabled && !link && !email && !ownerDevice && !signingIn;
   // The page's loading screen fades out here, or in the catalog once its products show.

@@ -10,6 +10,8 @@ module.exports = {
   maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
   cleanupOutdatedCaches: true,
   clientsClaim: true,
-  // Wait for the seller to tap Reload, so an update never swaps code mid-sale.
-  skipWaiting: false,
+  // A new version takes over at once, for the next time the app opens. The open page keeps
+  // running the code it loaded (one bundle, nothing loaded later), so a sale is never swapped
+  // mid-way; Reload in the sidebar applies it now (public/index.html).
+  skipWaiting: true,
 };

@@ -30,7 +30,10 @@ const supabase =
   url && key
     ? [
         `<link rel="preconnect" href="${url}" />`,
-        `<script>window.__photos = ${JSON.stringify(url + '/storage/v1/object/public/catalog/')}; window.__catalog = fetch(${JSON.stringify(url + '/rest/v1/rpc/catalog')}, { method: 'POST', body: '{}', headers: { apikey: ${JSON.stringify(key)}, Authorization: ${JSON.stringify('Bearer ' + key)}, 'Content-Type': 'application/json' } }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });</script>`,
+        // A plain GET with the key in the address: no custom headers, so the browser skips the
+        // CORS preflight round trip (public.catalog() is stable, so PostgREST allows GET).
+        // Visitors only: the owner's devices show the cashier (window.__owner, public/index.html).
+        `<script>window.__photos = ${JSON.stringify(url + '/storage/v1/object/public/catalog/')}; if (!window.__owner) window.__catalog = fetch(${JSON.stringify(`${url}/rest/v1/rpc/catalog?apikey=${encodeURIComponent(key)}`)}).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });</script>`,
       ]
     : [];
 

@@ -88,10 +88,22 @@
       #boot .c-foot b { min-height: 44px; display: flex; align-items: center; padding: 0 10px; color: #a3264f; font-size: 15px; }
     </style>
     <script>
-      // Offline support: sw.js (made by Workbox at build time) keeps the app on the device.
-      // A new version waits until the seller taps Reload in the sidebar, so a sale is never interrupted.
+      // One of the shop owner's devices? The app sets the flag once a device has signed in or
+      // synced (src/app/_layout.tsx); a signed-in session counts too. Visitors are everyone else.
+      window.__owner = (function () {
+        try { return !!localStorage.getItem('caracebu-owner') || Object.keys(localStorage).some(function (k) { return /^sb-.+-auth-token$/.test(k); }); } catch (e) { return false; }
+      })();
+
+      // Offline support, on the owner's devices only: sw.js (made by Workbox at build time) keeps
+      // the app on the device so it sells with no internet. A new version takes over the next time
+      // the app opens; the open app is never swapped mid-sale (Reload in the sidebar applies it now).
+      // Visitors don't get it: it cost them ~2 MB more on a first visit, and Safari kept showing
+      // them an old version, since only the cashier has a Reload button (2026-11-06).
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function () {
+        var registered = false;
+        window.__registerSW = function () {
+          if (registered) return;
+          registered = true;
           // Only builds made with `npm run build:web` have sw.js; the dev server answers with the page instead.
           fetch('/sw.js', { method: 'HEAD', cache: 'no-store' })
             .then(function (res) {
@@ -99,20 +111,18 @@
               return navigator.serviceWorker.register('/sw.js');
             })
             .then(function (reg) {
-              function ready() {
-                window.__updateReady = true;
-                window.dispatchEvent(new Event('appupdate'));
-              }
-              window.__applyUpdate = function () {
-                if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-                else location.reload();
-              };
-              if (reg.waiting && navigator.serviceWorker.controller) ready();
+              window.__applyUpdate = function () { location.reload(); };
               reg.addEventListener('updatefound', function () {
                 var worker = reg.installing;
+                // An older version was running, so this is an update, not the first install.
+                var update = !!reg.active;
                 if (!worker) return;
                 worker.addEventListener('statechange', function () {
-                  if (worker.state === 'installed' && navigator.serviceWorker.controller) ready();
+                  // The newer version is now in place: the sidebar offers Reload.
+                  if (worker.state === 'activated' && update) {
+                    window.__updateReady = true;
+                    window.dispatchEvent(new Event('appupdate'));
+                  }
                 });
               });
               reg.update().catch(function () {});
@@ -120,12 +130,12 @@
             .catch(function () {
               // No sw.js (development server) or no secure context: the app still works online.
             });
-          var reloading = false;
-          navigator.serviceWorker.addEventListener('controllerchange', function () {
-            if (reloading || !window.__updateReady) return;
-            reloading = true;
-            location.reload();
-          });
+        };
+        window.addEventListener('load', function () {
+          if (window.__owner) return window.__registerSW();
+          // A visitor: remove what an older version installed, so this browser stops serving an old copy.
+          navigator.serviceWorker.getRegistrations().then(function (regs) { regs.forEach(function (r) { r.unregister(); }); }).catch(function () {});
+          if (window.caches) caches.keys().then(function (keys) { keys.forEach(function (k) { if (/^workbox-/.test(k)) caches.delete(k); }); }).catch(function () {});
         });
       }
     </script>
@@ -168,11 +178,9 @@
           boot.appendChild(note);
         }, 15000);
 
-        // Only published builds start the catalog request (scripts/head.mjs). A device that has
-        // ever signed in is the owner's (src/app/_layout.tsx sets the flag): keep the Sell shapes.
-        var owner = true;
-        try { owner = !!localStorage.getItem('caracebu-owner') || Object.keys(localStorage).some(function (k) { return /^sb-.+-auth-token$/.test(k); }); } catch (e) {}
-        if (!window.__catalog || owner) return;
+        // Only published builds start the catalog request (scripts/head.mjs), and only for visitors:
+        // the owner's devices keep the Sell shapes.
+        if (!window.__catalog || window.__owner) return;
 
         var esc = function (t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
         var inner = Math.min(innerWidth, 1120) - 40;
