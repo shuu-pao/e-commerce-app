@@ -55,6 +55,8 @@ async (page) => {
           }
         }
         await p.waitForTimeout(60);
+        // Back past the app's first page leaves the site: come back in, that's not a crash.
+        if (p.url() === 'about:blank') { await p.goto(BASE + '/'); await p.waitForTimeout(1500); log.push('re-enter'); continue; }
         const body = await p.evaluate(() => document.body.innerText).catch(() => '');
         const bad = body.match(/NaN|undefined|Infinity|\[object Object\]|Something went wrong|Uncaught Error/);
         if (bad) problems.push({ step: i, last: log.slice(-4), kind: 'screen', msg: `"${bad[0]}" on screen at ${p.url()}` });
