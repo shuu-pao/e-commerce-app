@@ -26,8 +26,8 @@ new session won't know it, so record it here in the same turn.
   payment, online buyer details, the Online event); v4 (2026-10-24) adds
   row 4, the public catalog (computer and phone), and the Show in catalog
   switch on Edit product, approved by the client 2026-10-24; v5
-  (2026-10-27) adds row 5, the client's new requests (not built, waiting
-  on round 5 below). Source:
+  (2026-10-27) adds row 5, the client's new requests, approved by the
+  client 2026-11-06 (round 5, Decisions; not built yet). Source:
   read the canvas's files with the Artifact tool (scratchpad copies
   don't survive between sessions) and edit those.
 - **Question 3 is settled** (2026-10-19): no store apps. The app ships as
@@ -217,12 +217,12 @@ the developer.
 
 ## Open questions
 
-The client answered round 4 (the logo) on 2026-10-27 (Decisions below).
+None open. The client answered round 5 on 2026-11-06 (Decisions below).
 New client questions get batched here and asked all at once; never
 trickle them out one reply at a time.
 
-Round 5 (2026-10-27, in the mock's row 5 and its orange note; questions
-1 to 3 are on the client questions page since 2026-11-05, linking the mock). The client asked for: several photos on a product and on each
+Round 5, for the record (2026-10-27, the mock's row 5; asked on the
+client questions page 2026-11-05 with before and after pictures). The client asked for: several photos on a product and on each
 colour; categories to pick on top of Products, like the catalog; the
 catalog opening on the main product photos first. Mock v5 proposes: up
 to 6 product photos (the first is the cover, "Make cover" reorders) and
@@ -233,14 +233,9 @@ a second tap. Cashier screens and receipts keep one photo: the colour's
 first. Limits behind the numbers: photos live in the product record
 (about 60 to 90 KB each) and `push_records` refuses a record over 4 MB;
 Shopee allows 9 photos per product, Shopify one photo per variant.
-1. Products: is picking a category at the top to show only those
-   products what you meant?
-2. Are up to 6 photos per product and 3 per colour enough?
-3. Catalog: when a colour is picked, show only that colour's photos, or
-   all photos in one row?
-4. Answered 2026-10-28: (a), words between two stars show in bold in
-   the catalog (Decisions). Questions 1 to 3 still wait; build nothing
-   for them until she answers.
+Answers: 1 to 3 on 2026-11-06, all as the mock proposes (yes, the
+category filter is what she meant; 6 and 3 photos are enough; only the
+picked colour's photos). 4 on 2026-10-28 (bold between two stars).
 
 ## Public catalog (built 2026-10-24)
 
@@ -515,3 +510,6 @@ and the desktop it's a sidebar that stays open.
 | 2026-10-27 | Logo in the app: wordmark in the catalog header, sidebar, sign-in and loading screen; the full logo as the Home Screen icon. The browser tab icon and the berry buttons stay as they are (client, round 4) |
 | 2026-10-27 | A catalog product opens on its own photo with no colour picked; tapping a colour shows that colour's photo, tapping it again unpicks it (client) |
 | 2026-10-28 | In catalog descriptions, words between two stars (`**Details**`) show in bold and the stars disappear; everything else shows as typed (client, round 5 question 4) |
+| 2026-11-06 | Products: category chips at the top (All products, each category, No category) show only that category's products, as in mock v5 (client, round 5 question 1) |
+| 2026-11-06 | Photos: up to 6 per product (the first is the cover, "Make cover" reorders) and up to 3 per colour. Cashier screens and receipts keep one photo, the colour's first (client, round 5 question 2) |
+| 2026-11-06 | Catalog product: opens on the product's photos (big photo plus small ones); tapping a colour shows only that colour's photos, tapping it again goes back (client, round 5 question 3) |
