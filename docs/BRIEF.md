@@ -167,6 +167,11 @@ Supabase keys, which typing them empty in PowerShell can't do), `npm run test:db
 (the migration in PGlite), and stubbed network responses in Playwright.
 If sync or sign-in ever need a real server, run Supabase locally (Supabase
 CLI, needs Docker); not set up.
+EAS Hosting's free plan rate-limits bursts: about 90 test visits in 15
+minutes (2026-11-05/06, ~31 requests each) got "429 Too Many Requests"
+pages for a while, which hits real visitors too. The limit isn't
+documented. Keep load tests on the live site to a few visits, or test a
+local build (`dist/` served with brotli).
 
 ## Who's who
 
