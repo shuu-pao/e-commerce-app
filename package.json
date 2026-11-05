@@ -52,7 +52,7 @@
     "lint": "expo lint",
     "test": "node --test \"src/domain/*.test.ts\"",
     "typecheck": "tsc --noEmit",
-    "build:web": "expo export --platform web && workbox generateSW workbox-config.cjs",
+    "build:web": "expo export --platform web && node scripts/head.mjs && workbox generateSW workbox-config.cjs",
     "serve:web": "npx expo serve",
     "test:db": "node supabase/migration.test.mjs"
   },

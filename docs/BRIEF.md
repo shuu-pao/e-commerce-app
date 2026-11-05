@@ -121,6 +121,14 @@ new session needs to know beyond that:
   moving between screens never waits on the network (about 50 ms on slow
   4G). Icons come from a 3 KB subset font (`scripts/icons.py`) instead of
   the 390 KB Ionicons font.
+- **Catalog first visit** (client said it was slow, 2026-11-05): measured
+  on slow 4G with a mid-range phone, products showed at 5.3 s and photos
+  at 8.6 s, because each step waited for the last (470 KB of code, then
+  fonts, then the catalog request, then photos). `scripts/head.mjs` (part
+  of `build:web`) now starts the catalog request and the font downloads
+  from the page itself, in parallel with the code: products at about 3.7 s.
+  What's left: the code download itself (about 2.6 s on slow 4G) and the
+  photos (600 px files of 50 to 170 KB, shown at about 160 px in the grid).
 - **Monkey testing** (2026-10-22): 2,500 random actions in device-only
   mode (taps, junk input, back, reload, resizing). No crashes, console
   errors or blank screens; one bug found and fixed ("undefined" flashing in

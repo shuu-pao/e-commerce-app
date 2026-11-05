@@ -39,9 +39,16 @@ const photoUrl = (path: string | null) => (path && supabase ? supabase.storage.f
 
 export async function loadCatalog(): Promise<Catalog> {
   if (!supabase) return { products: [], categories: [] };
-  const { data, error } = await supabase.rpc('catalog');
-  if (error) throw error;
-  const catalog = data as Catalog;
+  // The published page starts this request before the app's code arrives (scripts/head.mjs).
+  const page = globalThis as { __catalog?: Promise<Catalog | null> };
+  const early = page.__catalog;
+  page.__catalog = undefined; // used once; a later load asks again
+  let catalog = early ? await early : null;
+  if (!catalog) {
+    const { data, error } = await supabase.rpc('catalog');
+    if (error) throw error;
+    catalog = data as Catalog;
+  }
   return {
     categories: catalog.categories,
     products: catalog.products.map((p) => ({
