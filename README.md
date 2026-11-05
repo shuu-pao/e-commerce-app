@@ -122,6 +122,9 @@ event so it downloads everything.
 - Don't clear Safari's website data or delete the app while orders are waiting, and
   sign-out is blocked until they've uploaded.
 - When a new version is published, the sidebar shows **A new version is ready · Reload**.
+  Without the tap, the new version starts the next time the app opens; an open app is never
+  swapped in the middle of a sale. Only devices that have signed in keep the app for offline
+  use; visitors to the catalog always get the newest version.
 
 ## How it fits together
 
