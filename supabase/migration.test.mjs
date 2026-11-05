@@ -125,4 +125,20 @@ await assert.rejects(db.query("insert into storage.objects (bucket_id, name) val
 await db.exec('reset role;');
 await db.exec(readFileSync(new URL('./migrations/20261022000000_records.sql', import.meta.url), 'utf8'));
 
+// 11. Photos after the cover are their own records (src/domain/photos.ts): the catalog lists them
+// in order after the cover, per product and per colour, and never a deleted one or a hidden product's.
+const hash = (s) => createHash('sha256').update(s).digest('hex') + '.jpg';
+const ph = (n, data) => rec('photos', `eeeeeeee-0000-4000-8000-0000000001${n}`, data);
+await push(OWNER, [
+  ph(41, { productId: P1, variantId: null, position: 2, photo: 'data:image/jpeg;base64,SECOND' }),
+  ph(42, { productId: P1, variantId: null, position: 1, photo: 'data:image/jpeg;base64,FIRST' }),
+  ph(43, { productId: P1, variantId: 'v-white', position: 1, photo: 'data:image/jpeg;base64,WHITE' }),
+  { ...ph(44, { productId: P1, variantId: null, position: 3, photo: '' }), deleted: true },
+  ph(45, { productId: P2, variantId: null, position: 1, photo: 'data:image/jpeg;base64,HIDDEN' }),
+]);
+await assert.rejects(push(OWNER, [rec('junk', 'eeeeeeee-0000-4000-8000-000000000199', {})]), /check constraint/, 'unknown collections are refused');
+const daisy2 = (await db.query('select public.catalog() as c')).rows[0].c.products[0];
+assert.deepEqual(daisy2.photos, [photo, 'data:image/jpeg;base64,FIRST', 'data:image/jpeg;base64,SECOND'].map(hash));
+assert.deepEqual(daisy2.variants.map((v) => v.photos), [[], [hash('data:image/jpeg;base64,WHITE')], []]);
+
 console.log('SQL migration: all checks passed');

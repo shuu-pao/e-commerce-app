@@ -75,7 +75,8 @@ token limit (sign-ins and token refreshes) to **30 requests per 5 minutes** inst
 One shop with a couple of devices never needs more, and it slows down password guessing.
 
 **Updating the database.** `supabase/migrations/20261022000000_records.sql` is safe to run
-again: paste the whole file into **SQL Editor** and **Run** after it changes.
+again: paste the whole file into **SQL Editor** and **Run** after it changes, **before**
+publishing the app version that needs it.
 
 **Keeping the free project awake.** Supabase pauses a free project after a week without
 use. `.github/workflows/keep-supabase-awake.yml` pings it every 3 days: add
@@ -146,5 +147,7 @@ public/         index.html (service worker registration), manifest, icons
   offline iPad and edits on the computer add up correctly after syncing.
 - **Order numbers** continue from the highest known number. If two offline devices pick the
   same number, the server gives the later upload the next free number.
-- **Photos** are cropped square and shrunk to 600 px on the device and stored inside the
-  product record, so they work offline with no storage bucket.
+- **Photos** are cropped square and shrunk to 600 px on the device, so they work offline
+  with no storage bucket. A product's first photo and each colour's first stay inside the
+  product record; the others are records of their own (`photos`), so saving a product
+  never uploads its photos again.

@@ -110,9 +110,12 @@ export async function publishPhotos(): Promise<void> {
     done.add(path);
     store.updateSettings({ publishedPhotos: [...done] });
   };
-  for (const p of Object.values(store.getState().db.products)) {
+  const { products, photos } = store.getState().db;
+  const extras = Object.values(photos).filter((r) => !r.deleted && r.photo);
+  for (const p of Object.values(products)) {
     if (p.deleted || !p.showInCatalog) continue;
-    for (const photo of [p.photo, ...p.variants.map((v) => v.photo)]) {
+    const all = [p.photo, ...p.variants.map((v) => v.photo), ...extras.filter((r) => r.productId === p.id).map((r) => r.photo)];
+    for (const photo of all) {
       if (!photo) continue;
       const path = await pathFor(photo);
       if (!done.has(path)) await put(path, photo.slice(photo.indexOf(',') + 1));

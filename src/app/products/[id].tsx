@@ -5,11 +5,12 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { centsToInput, parsePeso } from '@/domain/money';
+import { MAX_COLOUR_PHOTOS, MAX_PRODUCT_PHOTOS, photoList, type PhotoItem } from '@/domain/photos';
 import { deltaToReach, LOW_STOCK } from '@/domain/stock';
 import type { Id, Product } from '@/domain/types';
 import { useAppState, useLive, useStockLeft } from '@/data/hooks';
-import { adjustStock, newId, remove, save } from '@/data/store';
-import { pickSquarePhoto } from '@/lib/photo';
+import { adjustStock, newId, remove, save, savePhotos } from '@/data/store';
+import { pickSquarePhotos } from '@/lib/photo';
 import { Button } from '@/ui/Button';
 import { ConfirmDialog } from '@/ui/ConfirmDialog';
 import { Field } from '@/ui/Field';
@@ -36,7 +37,8 @@ export default function ProductScreen() {
 interface VariantForm {
   id: Id;
   name: string;
-  photo: string | null;
+  /** Its photos, the first one first (the one Sell, the cart and receipts show). */
+  photos: PhotoItem[];
   stockText: string;
   isNew: boolean;
 }
@@ -44,16 +46,23 @@ interface VariantForm {
 function Editor({ product }: { product: Product | undefined }) {
   const stock = useStockLeft();
   const categories = useLive('categories');
+  const records = useAppState((s) => s.db.photos);
   const [name, setName] = useState(product?.name ?? '');
   const [description, setDescription] = useState(product?.description ?? '');
   const [priceText, setPriceText] = useState(product ? centsToInput(product.price) : '');
   const [categoryIds, setCategoryIds] = useState<Id[]>(product?.categoryIds ?? []);
-  const [photo, setPhoto] = useState<string | null>(product?.photo ?? null);
+  // The first photo is the cover: the product card, and the catalog's first photo (client, round 5).
+  const [photos, setPhotos] = useState<PhotoItem[]>(() => (product ? photoList(product.photo, Object.values(records), product.id, null) : []));
   const [showInCatalog, setShowInCatalog] = useState(product?.showInCatalog ?? false);
   const [variants, setVariants] = useState<VariantForm[]>(
-    product?.variants.map((v) => ({ id: v.id, name: v.name, photo: v.photo, stockText: String(stock.get(v.id) ?? 0), isNew: false })) ?? [
-      { id: newId(), name: '', photo: null, stockText: '0', isNew: true },
-    ],
+    () =>
+      product?.variants.map((v) => ({
+        id: v.id,
+        name: v.name,
+        photos: photoList(v.photo, Object.values(records), product.id, v.id),
+        stockText: String(stock.get(v.id) ?? 0),
+        isNew: false,
+      })) ?? [{ id: newId(), name: '', photos: [], stockText: '0', isNew: true }],
   );
   const [tried, setTried] = useState(false);
   const [busyPhoto, setBusyPhoto] = useState<string | null>(null);
@@ -78,15 +87,14 @@ function Editor({ product }: { product: Product | undefined }) {
 
   const setVariant = (i: number, patch: Partial<VariantForm>) => setVariants(variants.map((v, j) => (j === i ? { ...v, ...patch } : v)));
 
-  const choosePhoto = async (target: 'product' | number) => {
+  const addPhotos = async (target: 'product' | number) => {
+    const room = target === 'product' ? MAX_PRODUCT_PHOTOS - photos.length : MAX_COLOUR_PHOTOS - variants[target].photos.length;
     setPhotoError(null);
     setBusyPhoto(String(target));
     try {
-      const uri = await pickSquarePhoto();
-      if (uri) {
-        if (target === 'product') setPhoto(uri);
-        else setVariant(target, { photo: uri });
-      }
+      const added = (await pickSquarePhotos(room)).map((uri) => ({ id: null, uri }));
+      if (target === 'product') setPhotos((list) => [...list, ...added]);
+      else setVariants((list) => list.map((v, j) => (j === target ? { ...v, photos: [...v.photos, ...added] } : v)));
     } catch (e) {
       console.error(e);
       setPhotoError("That photo couldn't be used. Try another one.");
@@ -105,10 +113,11 @@ function Editor({ product }: { product: Product | undefined }) {
       description: description.trim(),
       price,
       categoryIds,
-      photo,
-      variants: variants.map((v) => ({ id: v.id, name: v.name.trim(), photo: v.photo })),
+      photo: photos[0]?.uri ?? null,
+      variants: variants.map((v) => ({ id: v.id, name: v.name.trim(), photo: v.photos[0]?.uri ?? null })),
       showInCatalog,
     });
+    savePhotos(id, [{ variantId: null, items: photos }, ...variants.map((v) => ({ variantId: v.id, items: v.photos }))]);
     for (const v of variants) {
       const current = v.isNew ? 0 : (stock.get(v.id) ?? 0);
       adjustStock(id, v.id, deltaToReach(current, Number(v.stockText)));
@@ -119,17 +128,42 @@ function Editor({ product }: { product: Product | undefined }) {
   return (
     <Screen maxWidth={880}>
       <Drawer.Screen options={{ title: product ? 'Edit product' : 'Add product' }} />
-      <View style={styles.top}>
-        <View style={styles.photoCol}>
-          <Txt weight="semibold" style={styles.label}>Product photo</Txt>
-          <Pressable accessibilityRole="button" accessibilityLabel={photo ? 'Change product photo' : 'Add product photo'} onPress={() => choosePhoto('product')} style={styles.bigPhoto}>
-            <Photo uri={photo} name={name || 'New product'} fill />
-            <View style={styles.photoHint}>
-              <Txt variant="small" weight="semibold" color={colors.ink}>{busyPhoto === 'product' ? 'Preparing…' : photo ? 'Change photo' : 'Add photo'}</Txt>
-            </View>
-          </Pressable>
-          {photo ? <Button label="Remove photo" variant="ghost" onPress={() => setPhoto(null)} /> : null}
+      <View style={styles.section}>
+        <View style={styles.sectionHead}>
+          <Txt variant="heading">Product photos</Txt>
+          <Txt variant="small" style={styles.sectionNote}>
+            {photos.length} of {MAX_PRODUCT_PHOTOS} photos. The first photo is the cover: it shows on the product card and when the product opens.
+          </Txt>
         </View>
+        <View style={styles.tiles}>
+          {photos.map((p, i) => (
+            <View key={i} style={styles.tileCol}>
+              <View style={[styles.tile, i === 0 && styles.tileCover]}>
+                <Photo uri={p.uri} name={name || 'Product'} size={128} />
+                {i === 0 ? (
+                  <View style={styles.coverTag}>
+                    <Txt variant="small" weight="bold" color={colors.white}>Cover</Txt>
+                  </View>
+                ) : null}
+                <Pressable accessibilityRole="button" accessibilityLabel={`Remove photo ${i + 1}`} onPress={() => setPhotos(photos.filter((_, j) => j !== i))} style={styles.tileRemove}>
+                  <Icon name="close" size={16} color={colors.ink} />
+                </Pressable>
+              </View>
+              {i > 0 ? (
+                <Button label="Make cover" variant="ghost" accessibilityLabel={`Make photo ${i + 1} the cover`} onPress={() => setPhotos([p, ...photos.filter((_, j) => j !== i)])} />
+              ) : null}
+            </View>
+          ))}
+          {photos.length < MAX_PRODUCT_PHOTOS ? (
+            <Pressable accessibilityRole="button" onPress={() => addPhotos('product')} disabled={!!busyPhoto} style={styles.addTile}>
+              <Icon name="add" size={22} color={colors.accent} />
+              <Txt weight="semibold" color={colors.accent}>{busyPhoto === 'product' ? 'Preparing…' : 'Add photos'}</Txt>
+            </Pressable>
+          ) : null}
+        </View>
+      </View>
+      {photoError ? <Txt color={colors.accent} weight="semibold">{photoError}</Txt> : null}
+      <View style={styles.top}>
         <View style={styles.fields}>
           <Field label="Title" value={name} onChangeText={setName} error={tried ? errors.name : null} />
           <Field label="Description" value={description} onChangeText={setDescription} multiline placeholder="Material, size…" />
@@ -152,7 +186,6 @@ function Editor({ product }: { product: Product | undefined }) {
           </View>
         </View>
       </View>
-      {photoError ? <Txt color={colors.accent} weight="semibold">{photoError}</Txt> : null}
 
       <View style={styles.section}>
         <Txt weight="semibold" style={styles.label}>Categories (pick one or more)</Txt>
@@ -183,13 +216,29 @@ function Editor({ product }: { product: Product | undefined }) {
 
       <Card>
         <Txt variant="heading">{multi ? 'Colours and stock' : 'Stock'}</Txt>
-        <Txt variant="small">Type how many you have now. A colour at 0 shows as Sold out.</Txt>
+        <Txt variant="small">Type how many you have now. A colour at 0 shows as Sold out. Up to {MAX_COLOUR_PHOTOS} photos per colour.</Txt>
         {variants.map((v, i) => (
           <View key={v.id} style={styles.variant}>
-            <Pressable accessibilityRole="button" accessibilityLabel={`Photo for ${v.name || 'this colour'}`} onPress={() => choosePhoto(i)} style={styles.smallPhoto}>
-              <Photo uri={v.photo} name={v.name || name || '+'} size={56} />
-              {busyPhoto === String(i) ? <View style={styles.busy}><Txt variant="small">…</Txt></View> : null}
-            </Pressable>
+            <View style={styles.colourPhotos}>
+              {v.photos.map((p, k) => (
+                <Pressable
+                  key={k}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Remove photo ${k + 1} of ${v.name || 'this colour'}`}
+                  onPress={() => setVariant(i, { photos: v.photos.filter((_, j) => j !== k) })}
+                >
+                  <Photo uri={p.uri} name={v.name || name || '+'} size={52} />
+                  <View style={styles.smallRemove}>
+                    <Icon name="close" size={12} color={colors.ink} />
+                  </View>
+                </Pressable>
+              ))}
+              {v.photos.length < MAX_COLOUR_PHOTOS ? (
+                <Pressable accessibilityRole="button" accessibilityLabel={`Add a photo for ${v.name || 'this colour'}`} onPress={() => addPhotos(i)} disabled={!!busyPhoto} style={styles.smallAdd}>
+                  {busyPhoto === String(i) ? <Txt variant="small">…</Txt> : <Icon name="add" size={18} color={colors.accent} />}
+                </Pressable>
+              ) : null}
+            </View>
             <Field
               label={multi ? `Colour ${i + 1}` : 'Colour (optional)'}
               value={v.name}
@@ -221,7 +270,8 @@ function Editor({ product }: { product: Product | undefined }) {
             ) : null}
           </View>
         ))}
-        <Button label="Add colour" variant="outline" icon="add" onPress={() => setVariants([...variants, { id: newId(), name: '', photo: null, stockText: '0', isNew: true }])} style={styles.addColour} />
+        <Txt variant="small">Tap a colour&apos;s photo to remove it. The first photo of each colour shows in the cart and on receipts.</Txt>
+        <Button label="Add colour" variant="outline" icon="add" onPress={() => setVariants([...variants, { id: newId(), name: '', photos: [], stockText: '0', isNew: true }])} style={styles.addColour} />
       </Card>
 
       {tried && !valid ? <Txt color={colors.accent} weight="semibold">Fix the highlighted fields to save.</Txt> : null}
@@ -240,7 +290,10 @@ function Editor({ product }: { product: Product | undefined }) {
         onCancel={() => setConfirmDelete(false)}
         onConfirm={() => {
           setConfirmDelete(false);
-          if (product) remove('products', product.id);
+          if (product) {
+            remove('products', product.id);
+            savePhotos(product.id, []);
+          }
           router.replace('/products');
         }}
       />
@@ -250,11 +303,17 @@ function Editor({ product }: { product: Product | undefined }) {
 
 const styles = StyleSheet.create({
   top: { flexDirection: 'row', flexWrap: 'wrap', gap: 24 },
-  photoCol: { width: 200, gap: 8 },
   label: { fontSize: 14 },
-  bigPhoto: { width: 200, borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: colors.line },
-  photoHint: { position: 'absolute', left: 8, bottom: 8, paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, backgroundColor: colors.white },
-  fields: { flex: 1, minWidth: 280, gap: 14 },
+  sectionHead: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 12, rowGap: 4 },
+  sectionNote: { flexShrink: 1 },
+  tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  tileCol: { width: 132, gap: 2 },
+  tile: { borderWidth: 2, borderColor: 'transparent', borderRadius: radius.md + 2 },
+  tileCover: { borderColor: colors.accent },
+  coverTag: { position: 'absolute', left: 8, top: 8, paddingHorizontal: 8, paddingVertical: 1, borderRadius: radius.pill, backgroundColor: colors.accent },
+  tileRemove: { position: 'absolute', right: 6, top: 6, width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255, 255, 255, 0.92)' },
+  addTile: { width: 132, height: 132, gap: 6, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.lineStrong, borderRadius: radius.md + 2 },
+  fields: { flex: 1, minWidth: 280, maxWidth: 620, gap: 14 },
   catalog: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderWidth: 1, borderColor: colors.lineStrong, borderRadius: radius.lg },
   catalogOn: { borderColor: colors.accent, backgroundColor: colors.accentSoft },
   catalogText: { flex: 1, gap: 2 },
@@ -264,8 +323,9 @@ const styles = StyleSheet.create({
   chipOn: { borderColor: colors.accent, backgroundColor: colors.accentSoft },
   chipText: { fontFamily: fonts.semibold },
   variant: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', gap: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.line },
-  smallPhoto: { marginTop: 22, borderRadius: radius.md, overflow: 'hidden' },
-  busy: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.7)' },
+  colourPhotos: { width: 3 * 52 + 2 * 6, flexDirection: 'row', gap: 6, marginTop: 22 }, // room for 3, so the colour names line up
+  smallRemove: { position: 'absolute', right: 3, top: 3, width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255, 255, 255, 0.92)' },
+  smallAdd: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.lineStrong, borderRadius: radius.md },
   variantName: { flex: 1, minWidth: 180 },
   variantStock: { width: 140 },
   removeBtn: { width: touch, height: touch, marginTop: 22, alignItems: 'center', justifyContent: 'center' },

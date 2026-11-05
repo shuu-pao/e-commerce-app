@@ -1,7 +1,8 @@
 -- caracebu: the whole database. Run in Supabase › SQL Editor (see README).
 -- Safe to run again after changes: everything below replaces what's there.
 --
--- Every synced record (products, categories, events, orders, stock changes) is one row of JSON.
+-- Every synced record (products, categories, events, orders, stock changes, extra product
+-- photos) is one row of JSON.
 -- The app keeps its own copy on each device and works offline; this table is where the
 -- iPad and the computer meet. The newer change wins.
 
@@ -21,7 +22,7 @@ revoke all on function public.is_shop_owner() from public, anon;
 grant execute on function public.is_shop_owner() to authenticated;
 
 create table if not exists public.records (
-  collection text not null check (collection in ('products', 'categories', 'events', 'orders', 'stock')),
+  collection text not null,
   id uuid not null,
   data jsonb not null,
   updated_at timestamptz not null,
@@ -31,6 +32,10 @@ create table if not exists public.records (
   primary key (collection, id)
 );
 create index if not exists records_synced_at on public.records (synced_at, id);
+-- Replaced on every run, so a new kind of record only needs its name added here.
+alter table public.records drop constraint if exists records_collection_check;
+alter table public.records add constraint records_collection_check
+  check (collection in ('products', 'categories', 'events', 'orders', 'stock', 'photos'));
 
 alter table public.records enable row level security;
 drop policy if exists "shop owner reads" on public.records;
@@ -116,7 +121,8 @@ language sql immutable set search_path = '' as $$
   select case when n <= 0 then 'out' when n <= 5 then 'low' end;
 $$;
 
--- Photos are data URLs inside the product record. The owner's device copies each catalog photo
+-- Photos are data URLs: the covers inside the product record, the rest in 'photos' records
+-- (src/domain/photos.ts). The owner's device copies each catalog photo
 -- to the public "catalog" bucket under the SHA-256 of that text, so visitors load ordinary,
 -- cacheable images instead of pulling every photo through the database (src/data/catalog.ts).
 create or replace function public.catalog_photo_path(photo text) returns text
@@ -140,6 +146,15 @@ language sql stable security definer set search_path = '' as $$
   shown as (
     select p.data as d from public.records p
     where p.collection = 'products' and not p.deleted and coalesce((p.data->>'showInCatalog')::boolean, false)
+  ),
+  -- Photos after the covers, of shown products only. ponytail: hashes each photo on every call
+  -- (about 0.2 ms each); store the file name in the record if the catalog ever gets slow.
+  extra as materialized (
+    select x.id, x.data->>'productId' as product_id, x.data->>'variantId' as variant_id,
+      (x.data->>'position')::int as pos, public.catalog_photo_path(x.data->>'photo') as path
+    from public.records x
+    where x.collection = 'photos' and not x.deleted
+      and x.data->>'productId' in (select d->>'id' from shown)
   )
   select jsonb_build_object(
     'products', coalesce((
@@ -150,11 +165,26 @@ language sql stable security definer set search_path = '' as $$
         'price', (d->>'price')::bigint,
         'categoryIds', d->'categoryIds',
         'photo', public.catalog_photo_path(d->>'photo'),
+        -- The product page's gallery: the cover, then the other photos in order.
+        'photos', (
+          select coalesce(jsonb_agg(ph.path order by ph.pos, ph.id), '[]'::jsonb) from (
+            select 0 as pos, null::uuid as id, public.catalog_photo_path(d->>'photo') as path
+            union all
+            select e.pos, e.id, e.path from extra e where e.product_id = d->>'id' and e.variant_id is null
+          ) ph where ph.path is not null
+        ),
         'variants', (
           select jsonb_agg(jsonb_build_object(
             'id', v->>'id',
             'name', v->>'name',
             'photo', public.catalog_photo_path(v->>'photo'),
+            'photos', (
+              select coalesce(jsonb_agg(ph.path order by ph.pos, ph.id), '[]'::jsonb) from (
+                select 0 as pos, null::uuid as id, public.catalog_photo_path(v->>'photo') as path
+                union all
+                select e.pos, e.id, e.path from extra e where e.product_id = d->>'id' and e.variant_id = v->>'id'
+              ) ph where ph.path is not null
+            ),
             'stock', public.stock_status(coalesce(s.n, 0))
           ) order by t.ord)
           from jsonb_array_elements(d->'variants') with ordinality as t(v, ord)

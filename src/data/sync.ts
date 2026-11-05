@@ -60,7 +60,11 @@ function* batches(records: store.RemoteRecord[]) {
 
 async function push() {
   if (!supabase) return;
-  for (const batch of batches(store.outboxRecords())) {
+  const all = store.outboxRecords();
+  // Photos upload last, in requests of their own: if they fail (say the server's migration isn't
+  // re-run yet), orders and products still get through.
+  const groups = [all.filter((r) => r.collection !== 'photos'), all.filter((r) => r.collection === 'photos')];
+  for (const batch of groups.flatMap((group) => [...batches(group)])) {
     const rows = batch.map(({ collection, record }) => ({
       collection,
       id: record.id,
@@ -74,20 +78,15 @@ async function push() {
   }
 }
 
-async function pull() {
-  if (!supabase) return;
-  const cursor = store.getState().settings.lastPulledAt;
-  // Re-read a few seconds back: a change committed just as we last read can carry an older time.
-  const since = cursor ? new Date(Date.parse(cursor) - 5000).toISOString() : '1970-01-01T00:00:00.000Z';
-  let newest = cursor;
+const EPOCH = '1970-01-01T00:00:00.000Z';
+
+/** Downloads rows changed after `since` (one collection, or all); returns the newest server time seen, at least `newest`. */
+async function download(since: string, newest: string | null, collection?: CollectionName): Promise<string | null> {
+  if (!supabase) return newest;
   for (let offset = 0; ; offset += PAGE) {
-    const { data, error } = await supabase
-      .from('records')
-      .select('collection, data, synced_at')
-      .gt('synced_at', since)
-      .order('synced_at')
-      .order('id')
-      .range(offset, offset + PAGE - 1);
+    let query = supabase.from('records').select('collection, data, synced_at').gt('synced_at', since);
+    if (collection) query = query.eq('collection', collection);
+    const { data, error } = await query.order('synced_at').order('id').range(offset, offset + PAGE - 1);
     if (error) throw error;
     store.applyRemote(
       data.map((row) => ({
@@ -100,9 +99,21 @@ async function pull() {
     }
     if (data.length < PAGE) break;
   }
+  return newest;
+}
+
+async function pull() {
+  const { lastPulledAt: cursor, photosPulled } = store.getState().settings;
+  // Re-read a few seconds back: a change committed just as we last read can carry an older time.
+  const newest = await download(cursor ? new Date(Date.parse(cursor) - 5000).toISOString() : EPOCH, cursor);
   // An empty first download still counts as done (the epoch means "nothing newer seen yet").
-  const done = newest ?? '1970-01-01T00:00:00.000Z';
+  const done = newest ?? EPOCH;
   if (done !== cursor) store.updateSettings({ lastPulledAt: done });
+  if (!photosPulled) {
+    // App versions before photo records skipped those rows but moved past them: fetch them all once.
+    if (cursor) await download(EPOCH, null, 'photos');
+    store.updateSettings({ photosPulled: true });
+  }
 }
 
 /** `force` (the seller tapping the sync box) skips the back-off wait. */

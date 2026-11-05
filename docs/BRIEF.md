@@ -67,18 +67,19 @@ new session won't know it, so record it here in the same turn.
   drawn at 2.9 s on the first visit after the deploy (cold), 1.1 s on the
   next; the app took over 0.2-0.3 s later (was 12 s); grid photos load
   the 480 px copies. Waiting on the client's retest on her iPhone and iPad.
-- **Waiting on the developer (2026-11-06):** how to store several photos
-  (round 5). Her 37 photos average 65 KB, largest 163 KB; a 10-colour
-  product at the full limits (36 photos) is 3.2 MB at average size, up
-  to 8 MB at the largest, over the 4 MB record limit. A (recommended):
-  the cover stays in `photo`, each extra photo is its own record in a
-  new `photos` collection (old devices skip unknown collections in
-  `mergeRemote`); re-run the migration before deploying. B: all photos
-  in the product record, limit raised to ~10 MB (every product save
-  re-uploads all its photos). The catalog gallery is built (2026-11-06,
-  `src/ui/Catalog.tsx`): it reads `photos` lists from `public.catalog()`
-  and treats today's single photo as a list of one, so nothing shows
-  until the storage is built.
+- **Several photos built (2026-11-06), committed, not deployed yet:**
+  Edit product takes up to 6 product photos (Cover, Make cover, remove,
+  Add photos picks several at once) and up to 3 per colour, as in mock
+  v5; the catalog gallery shows them. Storage is option A (Decisions,
+  Build notes "Photos"). **To deploy: re-run the migration in Supabase
+  first** (it allows the `photos` records and makes `catalog()` list
+  them), then `npm run build:web` and deploy. In the other order the
+  server refuses the photo uploads until the migration runs: orders and
+  products still upload (photos go last, in requests of their own), but
+  the sidebar shows a sync error and downloads wait.
+  Tested: `npm test` (the save plan), `npm run test:db` (the migration,
+  including the upgrade of a table made by the old file), the editor in
+  WebKit and Chromium (device-only), and sync against a stubbed server.
 
 ## Build notes (version 1, 2026-10-22)
 
@@ -105,9 +106,19 @@ new session needs to know beyond that:
   sales and desktop edits can't overwrite each other.
 - **Order numbers**: highest known + 1. If two offline devices clash, the
   server renumbers the later upload.
-- **Photos**: cropped square, 600 px JPEG, stored as data URLs inside the
-  product record (works offline, no storage bucket). If the 500 MB
-  database ever gets close to full, move them to Supabase Storage.
+- **Photos**: cropped square, 600 px JPEG data URLs (works offline, no
+  storage bucket). The covers (a product's first photo, each colour's
+  first) stay inside the product record, so Sell, the cart, receipts and
+  old app versions read them as before. Every other photo is a `photos`
+  record (`src/domain/photos.ts`: productId, variantId or null, position
+  after the cover), written only when added or moved, so a price change
+  uploads no photos and no record nears the 4 MB limit. A deleted photo
+  record is emptied (`photo: ''`). Photo records upload after everything
+  else, in requests of their own. App versions before them skipped those
+  rows but moved their download cursor past them, so each device
+  downloads every photo record once (`settings.photosPulled`, `sync.ts`).
+  If the 500 MB database ever gets close to full, move photos to
+  Supabase Storage.
 - **Access**: row-level security allows only users listed in
   `shop_owners`; sign-ups should stay off. Only the anon key is in the app.
 - **Logins**: no sign-up screen. The owner joins by a Supabase invitation
@@ -540,6 +551,7 @@ and the desktop it's a sidebar that stays open.
 | 2026-11-06 | The service worker only on the owner's devices; a new version takes over the next time the app opens, never mid-sale, and Reload applies it now. Replaces "updates wait for Reload" (build) |
 | 2026-10-22 | Stock is a ledger (stock changes minus sold pieces), not a stored number, so two devices can't overwrite each other (build) |
 | 2026-10-22 | Photos stored in the product record as small square JPEGs (build) |
+| 2026-11-06 | Several photos (round 5): the covers stay in the product record, every other photo is its own `photos` record (developer chose option A over all photos in the product record with a ~10 MB limit) |
 | 2026-10-22 | Only users in `shop_owners` can read or write; sign-ups off (build) |
 | 2026-10-22 | The owner joins by invitation and sets their own password; forgot and change password in the app; no public sign-up (developer) |
 | 2026-10-23 | Rate limiting: Supabase's auth limits plus app-side sign-in cooldown, reset-email cooldown, sync back-off, and upload size limits in the database (build) |

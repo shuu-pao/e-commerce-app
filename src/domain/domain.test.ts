@@ -7,10 +7,11 @@ import { change, checkoutProblems, discountAmount, formatOrderNumber, nextOrderN
 import { ordersToCsv } from './csv.ts';
 import { addMonths, dateKey, isDateKey, monthEnd, weekStart } from './dates.ts';
 import { mergeRemote, nextStamp } from './merge.ts';
+import { photoList, planPhotos } from './photos.ts';
 import { formatPeso, parsePeso } from './money.ts';
 import { bestSellers, byDay, byPayment, filterOrders, periodRange, shiftPeriod, summarize } from './reports.ts';
 import { stockByVariant } from './stock.ts';
-import type { Order, OrderLine, StockAdjustment } from './types.ts';
+import type { Order, OrderLine, ProductPhoto, StockAdjustment } from './types.ts';
 
 const line = (over: Partial<OrderLine> = {}): OrderLine => ({
   productId: 'p1', variantId: 'v1', name: 'Daisy claw clip', variantName: 'Yellow', price: 12000, qty: 1, ...over,
@@ -116,7 +117,7 @@ test('csv: Excel-ready with quoting', () => {
 
 test('merge: newer wins, own uploads coming back clear the outbox, newer local edits stay', () => {
   const t = (iso: string, extra = {}) => ({ id: 'x', updatedAt: iso, ...extra });
-  const tables = { products: { x: t('2026-10-22T10:00:00.000Z', { name: 'local' }) }, categories: {}, events: {}, orders: {}, stock: {} };
+  const tables = { products: { x: t('2026-10-22T10:00:00.000Z', { name: 'local' }) }, categories: {}, events: {}, orders: {}, stock: {}, photos: {} };
   const outbox = { 'products/x': true as const };
 
   // Server copy is older: keep ours, keep it queued.
@@ -141,4 +142,25 @@ test('merge: newer wins, own uploads coming back clear the outbox, newer local e
 test('merge: change times never go backwards on a device with a slow clock', () => {
   assert.equal(nextStamp('2026-10-22T10:00:00.000Z', Date.parse('2026-10-22T09:00:00.000Z')), '2026-10-22T10:00:00.001Z');
   assert.equal(nextStamp(undefined, Date.parse('2026-10-22T09:00:00.000Z')), '2026-10-22T09:00:00.000Z');
+});
+
+test('photos: cover in the product, the rest as records rewritten only when they move', () => {
+  const rec = (id: string, position: number, photo: string, variantId: string | null = null): ProductPhoto => ({ id, updatedAt: '2026-11-06T00:00:00.000Z', productId: 'p', variantId, position, photo });
+  const records = [rec('b', 2, 'B'), rec('a', 1, 'A'), rec('y', 1, 'Y2', 'v1'), rec('gone', 3, '', null), rec('other', 1, 'Z')].map((r) => (r.id === 'gone' ? { ...r, deleted: true } : r.id === 'other' ? { ...r, productId: 'q' } : r));
+  const own = photoList('C', records, 'p', null);
+  assert.deepEqual(own, [{ id: null, uri: 'C' }, { id: 'a', uri: 'A' }, { id: 'b', uri: 'B' }]);
+  assert.deepEqual(photoList(null, records, 'p', 'v1').map((p) => p.uri), ['Y2']);
+
+  let n = 0;
+  const ids = () => `new${++n}`;
+  // Nothing changed: nothing written (a price change uploads no photos).
+  assert.deepEqual(planPhotos(records, 'p', [{ variantId: null, items: own }, { variantId: 'v1', items: [{ id: null, uri: 'Y1' }, { id: 'y', uri: 'Y2' }] }], ids), { save: [], drop: [] });
+
+  // Make B the cover: the old cover becomes a record, A moves, B's record goes; v1 dropped with its colour.
+  const plan = planPhotos(records, 'p', [{ variantId: null, items: [own[2], own[0], own[1]] }], ids);
+  assert.deepEqual(plan.save, [
+    { id: 'new1', productId: 'p', variantId: null, position: 1, photo: 'C' },
+    { id: 'a', productId: 'p', variantId: null, position: 2, photo: 'A' },
+  ]);
+  assert.deepEqual(plan.drop.map((r) => r.id).sort(), ['b', 'y']);
 });

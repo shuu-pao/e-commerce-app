@@ -5,6 +5,7 @@ import { randomUUID } from 'expo-crypto';
 
 import { nextOrderNumber } from '@/domain/checkout';
 import { mergeRemote, nextStamp, type Tables } from '@/domain/merge';
+import { planPhotos, type PhotoItem } from '@/domain/photos';
 import type { CollectionName, Collections, Id, Order, OrderLine, Product, ShopEvent, StockAdjustment } from '@/domain/types';
 import { COLLECTIONS, ONLINE_EVENT_ID } from '@/domain/types';
 
@@ -31,6 +32,8 @@ export interface Settings {
   signedInEmail: string | null;
   /** Catalog photo files this device already uploaded (src/data/catalog.ts). */
   publishedPhotos?: string[];
+  /** Downloaded every photo record once (sync.ts: versions before them skipped those rows). */
+  photosPulled?: boolean;
 }
 
 export interface SyncStatus {
@@ -52,7 +55,7 @@ export interface AppState {
   saveError: string | null;
 }
 
-const emptyDb = (): Db => ({ products: {}, categories: {}, events: {}, orders: {}, stock: {} });
+const emptyDb = (): Db => ({ products: {}, categories: {}, events: {}, orders: {}, stock: {}, photos: {} });
 const emptyCart = (): Cart => ({ lines: [], editingOrderId: null });
 
 let state: AppState = {
@@ -293,6 +296,16 @@ export function adjustStock(productId: Id, variantId: Id, delta: number) {
     id: newId(), productId, variantId, delta, createdAt: new Date().toISOString(),
   };
   save('stock', adjustment);
+}
+
+/**
+ * Saves a product's photos after the covers (src/domain/photos.ts). Pass every list the product
+ * keeps: photos of colours left out, or of a deleted product (no lists), are deleted.
+ */
+export function savePhotos(productId: Id, lists: { variantId: Id | null; items: PhotoItem[] }[]) {
+  const { save: changed, drop } = planPhotos(Object.values(state.db.photos), productId, lists, newId);
+  const drafts = [...changed, ...drop.map((r) => ({ ...r, photo: '', deleted: true }))];
+  if (drafts.length) save('photos', ...drafts);
 }
 
 export function setCurrentEvent(id: Id | null) {

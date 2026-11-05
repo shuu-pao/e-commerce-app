@@ -33,6 +33,21 @@ export interface Product extends BaseRecord {
   showInCatalog?: boolean;
 }
 
+/**
+ * A photo after the cover, of a product or of one of its colours (src/domain/photos.ts). The
+ * covers stay in Product.photo and Variant.photo, so a product record stays small and screens
+ * that show one photo (Sell, cart, receipts) never need these.
+ */
+export interface ProductPhoto extends BaseRecord {
+  productId: Id;
+  /** The colour it belongs to, or null for the product's own photos. */
+  variantId: Id | null;
+  /** 1, 2, … after the cover. */
+  position: number;
+  /** Square JPEG as a data URL; '' once deleted, so a deleted photo takes no space. */
+  photo: string;
+}
+
 export interface ShopEvent extends BaseRecord {
   name: string;
   /** YYYY-MM-DD, optional. */
@@ -94,11 +109,12 @@ export interface Collections {
   events: ShopEvent;
   orders: Order;
   stock: StockAdjustment;
+  photos: ProductPhoto;
 }
 
 export type CollectionName = keyof Collections;
 
-export const COLLECTIONS: CollectionName[] = ['products', 'categories', 'events', 'orders', 'stock'];
+export const COLLECTIONS: CollectionName[] = ['products', 'categories', 'events', 'orders', 'stock', 'photos'];
 
 /** The permanent event that holds online (Instagram) orders. */
 export const ONLINE_EVENT_ID = '00000000-0000-4000-8000-000000000001';
