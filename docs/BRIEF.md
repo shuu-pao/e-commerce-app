@@ -127,8 +127,11 @@ new session needs to know beyond that:
   fonts, then the catalog request, then photos). `scripts/head.mjs` (part
   of `build:web`) now starts the catalog request and the font downloads
   from the page itself, in parallel with the code: products at about 3.7 s.
-  What's left: the code download itself (about 2.6 s on slow 4G) and the
-  photos (600 px files of 50 to 170 KB, shown at about 160 px in the grid).
+  The grid loads a 480 px copy of each product's cover (`<name>-480.jpg`,
+  sharp on a 3x phone, about 40% fewer bytes); the owner's device uploads
+  the copies with the photos after a sync, and the grid falls back to the
+  full photo until it has. The product page keeps the 600 px photos.
+  What's left: the code download itself (about 2.6 s on slow 4G).
 - **Monkey testing** (2026-10-22): 2,500 random actions in device-only
   mode (taps, junk input, back, reload, resizing). No crashes, console
   errors or blank screens; one bug found and fixed ("undefined" flashing in

@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { colors, radius, tintFor } from './theme';
@@ -12,15 +13,19 @@ interface Props {
   fill?: boolean;
   /** A small label in the corner, e.g. "3 colours". */
   badge?: string | null;
+  /** Shown instead if `uri` fails to load. */
+  fallback?: string | null;
 }
 
 /** A square product photo, or a tinted square with the product's initials. */
-export function Photo({ uri, name, size = 56, fill, badge }: Props) {
+export function Photo({ uri: first, name, size = 56, fill, badge, fallback }: Props) {
+  const [failed, setFailed] = useState<string | null>(null);
+  const uri = failed && failed === first ? fallback : first;
   const box = fill ? styles.fill : { width: size, height: size };
   return (
     <View style={[styles.box, box, !uri && { backgroundColor: tintFor(name) }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {uri ? (
-        <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={120} />
+        <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={120} onError={fallback ? () => setFailed(first) : undefined} />
       ) : (
         <Txt weight="bold" color={colors.muted} style={{ fontSize: fill ? 28 : Math.max(12, size / 3.2) }}>
           {initials(name)}

@@ -3,11 +3,15 @@
 import { CryptoDigestAlgorithm, digestStringAsync } from 'expo-crypto';
 
 import type { Cents, Id } from '@/domain/types';
+import { shrinkPhoto } from '@/lib/photo';
 
 import * as store from './store';
 import { supabase } from './supabase';
 
 const BUCKET = 'catalog';
+/** The catalog grid loads a 480 px copy of each product's cover: sharp on a 3x phone screen, ~40% fewer bytes. */
+const GRID_SIZE = 480;
+const gridName = (path: string) => path.replace(/\.jpg$/, `-${GRID_SIZE}.jpg`);
 
 /** 'out' = sold out, 'low' = 5 pieces or fewer. The number itself never leaves the database. */
 export type StockStatus = 'out' | 'low' | null;
@@ -26,6 +30,8 @@ export interface CatalogProduct {
   price: Cents;
   categoryIds: Id[];
   photo: string | null;
+  /** The cover's small copy for the grid; the owner's device uploads it on its next sync, so it may be missing. */
+  gridPhoto: string | null;
   variants: CatalogVariant[];
   stock: StockStatus;
 }
@@ -35,7 +41,8 @@ export interface Catalog {
   categories: { id: Id; name: string }[];
 }
 
-const photoUrl = (path: string | null) => (path && supabase ? supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl : null);
+const photoUrl = (path: string | null, grid = false) =>
+  path && supabase ? supabase.storage.from(BUCKET).getPublicUrl(grid ? gridName(path) : path).data.publicUrl : null;
 
 export async function loadCatalog(): Promise<Catalog> {
   if (!supabase) return { products: [], categories: [] };
@@ -54,6 +61,7 @@ export async function loadCatalog(): Promise<Catalog> {
     products: catalog.products.map((p) => ({
       ...p,
       photo: photoUrl(p.photo),
+      gridPhoto: photoUrl(p.photo ?? p.variants[0]?.photo ?? null, true),
       variants: p.variants.map((v) => ({ ...v, photo: photoUrl(v.photo) })),
     })),
   };
@@ -73,8 +81,8 @@ async function pathFor(photo: string): Promise<string> {
   return path;
 }
 
-function bytes(dataUrl: string): Uint8Array {
-  const raw = atob(dataUrl.slice(dataUrl.indexOf(',') + 1));
+function bytes(base64: string): Uint8Array {
+  const raw = atob(base64);
   return Uint8Array.from(raw, (c) => c.charCodeAt(0));
 }
 
@@ -85,19 +93,26 @@ function bytes(dataUrl: string): Uint8Array {
  */
 export async function publishPhotos(): Promise<void> {
   if (!supabase) return;
+  const bucket = supabase.storage.from(BUCKET);
   const done = new Set(store.getState().settings.publishedPhotos ?? []);
+  const put = async (path: string, base64: string) => {
+    const { error } = await bucket.upload(path, bytes(base64), { contentType: 'image/jpeg', cacheControl: '31536000', upsert: true });
+    if (error) throw error;
+    done.add(path);
+    store.updateSettings({ publishedPhotos: [...done] });
+  };
   for (const p of Object.values(store.getState().db.products)) {
     if (p.deleted || !p.showInCatalog) continue;
     for (const photo of [p.photo, ...p.variants.map((v) => v.photo)]) {
       if (!photo) continue;
       const path = await pathFor(photo);
-      if (done.has(path)) continue;
-      const { error } = await supabase.storage
-        .from(BUCKET)
-        .upload(path, bytes(photo), { contentType: 'image/jpeg', cacheControl: '31536000', upsert: true });
-      if (error) throw error;
-      done.add(path);
-      store.updateSettings({ publishedPhotos: [...done] });
+      if (!done.has(path)) await put(path, photo.slice(photo.indexOf(',') + 1));
     }
+    const cover = p.photo ?? p.variants[0]?.photo; // the grid's photo, as loadCatalog picks it
+    if (!cover) continue;
+    const grid = gridName(await pathFor(cover));
+    if (done.has(grid)) continue;
+    const small = await shrinkPhoto(cover, GRID_SIZE);
+    if (small) await put(grid, small);
   }
 }

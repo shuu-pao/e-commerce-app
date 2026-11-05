@@ -25,3 +25,11 @@ export async function pickSquarePhoto(): Promise<string | null> {
   const saved = await image.saveAsync({ format: SaveFormat.JPEG, compress: 0.72, base64: true });
   return saved.base64 ? `data:image/jpeg;base64,${saved.base64}` : null;
 }
+
+/** A smaller copy of a saved square photo, as base64 JPEG (never upscaled). */
+export async function shrinkPhoto(dataUrl: string, size: number): Promise<string | null> {
+  const loaded = await ImageManipulator.manipulate(dataUrl).renderAsync();
+  const side = Math.min(size, loaded.width);
+  const image = await ImageManipulator.manipulate(loaded).resize({ width: side, height: side }).renderAsync();
+  return (await image.saveAsync({ format: SaveFormat.JPEG, compress: 0.72, base64: true })).base64 ?? null;
+}

@@ -185,7 +185,7 @@ function Card({ product, columns, onPress }: { product: CatalogProduct; columns:
       style={({ pressed, hovered }) => [styles.card, { flexBasis: `${100 / columns}%`, maxWidth: `${100 / columns}%` }, (pressed || hovered) && styles.cardActive]}
     >
       <View style={product.stock === 'out' && styles.dim}>
-        <Photo uri={product.photo ?? product.variants[0]?.photo ?? null} name={product.name} fill badge={colours > 1 ? `${colours} colours` : null} />
+        <Photo uri={product.gridPhoto} fallback={product.photo ?? product.variants[0]?.photo} name={product.name} fill badge={colours > 1 ? `${colours} colours` : null} />
       </View>
       <Txt weight="semibold" numberOfLines={2} style={styles.cardName}>{product.name}</Txt>
       <View style={styles.cardMeta}>
