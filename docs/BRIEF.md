@@ -205,8 +205,8 @@ The client answered round 4 (the logo) on 2026-10-27 (Decisions below).
 New client questions get batched here and asked all at once; never
 trickle them out one reply at a time.
 
-Round 5 (2026-10-27, in the mock's row 5 and its orange note; not sent
-yet). The client asked for: several photos on a product and on each
+Round 5 (2026-10-27, in the mock's row 5 and its orange note; questions
+1 to 3 are on the client questions page since 2026-11-05, linking the mock). The client asked for: several photos on a product and on each
 colour; categories to pick on top of Products, like the catalog; the
 catalog opening on the main product photos first. Mock v5 proposes: up
 to 6 product photos (the first is the cover, "Make cover" reorders) and
