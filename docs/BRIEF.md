@@ -67,7 +67,7 @@ new session won't know it, so record it here in the same turn.
   drawn at 2.9 s on the first visit after the deploy (cold), 1.1 s on the
   next; the app took over 0.2-0.3 s later (was 12 s); grid photos load
   the 480 px copies. Waiting on the client's retest on her iPhone and iPad.
-- **Several photos built (2026-11-06), committed, not deployed yet:**
+- **Several photos deployed (2026-11-06; migration re-run first):**
   Edit product takes up to 6 product photos (Cover, Make cover, remove,
   Add photos picks several at once) and up to 3 per colour, as in mock
   v5; the catalog gallery shows them. Storage is option A (Decisions,
