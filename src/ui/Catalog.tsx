@@ -9,6 +9,7 @@ import { hideBoot, takeEarlyTap } from './boot';
 import { Button } from './Button';
 import { Icon } from './Icon';
 import { Photo } from './Photo';
+import { FilterChips } from './FilterChips';
 import { Empty } from './Screen';
 import { GridSkeleton } from './Skeleton';
 import { colors, fonts, radius, touch } from './theme';
@@ -50,7 +51,7 @@ export function Catalog({ onSignIn }: { onSignIn: () => void }) {
         setFailed(true);
       },
     );
-  useEffect(() => void fetchCatalog(), []);
+  useEffect(() => void fetchCatalog(), []); // eslint-disable-line react-hooks/exhaustive-deps -- load once on open
   const load = () => {
     setFailed(false);
     void fetchCatalog();
@@ -111,16 +112,12 @@ export function Catalog({ onSignIn }: { onSignIn: () => void }) {
         ) : null}
       </View>
       {categories.length ? (
-        <View style={styles.chips} accessibilityLabel="Categories">
-          {[{ id: null, name: 'All products' }, ...categories].map((c) => {
-            const on = c.id === category;
-            return (
-              <Pressable key={c.id ?? 'all'} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => setCategory(c.id)} style={[styles.chip, on && styles.chipOn]}>
-                <Txt weight="semibold" color={on ? colors.accent : colors.ink}>{c.name}</Txt>
-              </Pressable>
-            );
-          })}
-        </View>
+        <FilterChips
+          label="Categories"
+          options={[{ key: null, label: 'All products' }, ...categories.map((c) => ({ key: c.id, label: c.name }))]}
+          value={category}
+          onChange={setCategory}
+        />
       ) : null}
     </View>
   );
@@ -282,9 +279,6 @@ const styles = StyleSheet.create({
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: touch, paddingLeft: 14, paddingRight: 4, borderWidth: 1, borderColor: colors.lineStrong, borderRadius: radius.pill },
   searchInput: { flex: 1, minWidth: 0, minHeight: touch - 2, fontFamily: fonts.regular, fontSize: 16, color: colors.ink, outlineStyle: 'none' } as never,
   clear: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { minHeight: touch, justifyContent: 'center', paddingHorizontal: 16, borderRadius: radius.pill, borderWidth: 1.5, borderColor: colors.lineStrong },
-  chipOn: { borderColor: colors.accent, backgroundColor: colors.accentSoft },
   row: { alignItems: 'flex-start' },
   card: { padding: 8, gap: 6, borderRadius: radius.lg },
   cardActive: { backgroundColor: colors.surface },
