@@ -59,6 +59,20 @@ new session won't know it, so record it here in the same turn.
   2026-11-05: 6 real products show, with their photos.
 - Next: Supabase Site URL and redirect URLs, invite the client, install on
   the iPad (README). The keep-awake ping works (GitHub secrets set, tested 2026-10-22).
+- **2026-11-06, committed, not deployed yet:** the Safari 12 s font stall
+  fix, getAll, the service worker only on owner devices, and the Products
+  category chips (Build notes, Decisions). Deploying makes the owner's
+  devices reload once, a few seconds after the app next opens (their old
+  update code); deploy when she isn't at an event.
+- **Waiting on the developer (2026-11-06):** how to store several photos
+  (round 5). Her 37 photos average 65 KB, largest 163 KB; a 10-colour
+  product at the full limits (36 photos) is 3.2 MB at average size, up
+  to 8 MB at the largest, over the 4 MB record limit. A (recommended):
+  the cover stays in `photo`, each extra photo is its own record in a
+  new `photos` collection (old devices skip unknown collections in
+  `mergeRemote`); re-run the migration before deploying. B: all photos
+  in the product record, limit raised to ~10 MB (every product save
+  re-uploads all its photos). The catalog gallery follows either way.
 
 ## Build notes (version 1, 2026-10-22)
 
