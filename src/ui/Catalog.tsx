@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { loadCatalog, type Catalog as CatalogData, type CatalogProduct, type StockStatus } from '@/data/catalog';
 import { formatPeso } from '@/domain/money';
 
+import { hideBoot, takeEarlyTap } from './boot';
 import { Button } from './Button';
 import { Icon } from './Icon';
 import { Photo } from './Photo';
@@ -31,16 +32,33 @@ export function Catalog({ onSignIn }: { onSignIn: () => void }) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
+  const openProduct = (id: string) => {
+    setOpenId(id);
+    if (onWeb) history.pushState({ catalogProduct: id }, '');
+  };
   const fetchCatalog = () =>
-    loadCatalog().then(setData, (e: unknown) => {
-      console.error(e);
-      setFailed(true);
-    });
+    loadCatalog().then(
+      (catalog) => {
+        setData(catalog);
+        // The page drew these products before the app loaded (public/index.html); open one the
+        // visitor already tapped there.
+        const tapped = takeEarlyTap();
+        if (tapped && catalog.products.some((p) => p.id === tapped)) openProduct(tapped);
+      },
+      (e: unknown) => {
+        console.error(e);
+        setFailed(true);
+      },
+    );
   useEffect(() => void fetchCatalog(), []);
   const load = () => {
     setFailed(false);
     void fetchCatalog();
   };
+  // Take over from the page's own drawing once these products (or the error) are on screen.
+  useEffect(() => {
+    if (data || failed) hideBoot();
+  }, [data, failed]);
 
   // On the web, the browser's Back button closes an open product instead of leaving the site.
   useEffect(() => {
@@ -49,10 +67,6 @@ export function Catalog({ onSignIn }: { onSignIn: () => void }) {
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
-  const openProduct = (id: string) => {
-    setOpenId(id);
-    if (onWeb) history.pushState({ catalogProduct: id }, '');
-  };
   const closeProduct = () => (onWeb ? history.back() : setOpenId(null));
 
   const products = useMemo(() => data?.products ?? [], [data]);

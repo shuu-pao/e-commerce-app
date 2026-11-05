@@ -13,6 +13,7 @@ import { useAppState } from '@/data/hooks';
 import { loadFromDevice } from '@/data/store';
 import { authLinkAtStart, forgetAuthLink } from '@/data/supabase';
 import { startSync, syncEnabled } from '@/data/sync';
+import { hideBoot } from '@/ui/boot';
 import { Catalog } from '@/ui/Catalog';
 import { SetPassword } from '@/ui/SetPassword';
 import { Sidebar } from '@/ui/Sidebar';
@@ -41,13 +42,8 @@ export default function RootLayout() {
   useEffect(() => {
     if (!show) return;
     void SplashScreen.hideAsync();
-    // The web page paints a skeleton before JavaScript loads (public/index.html); fade it out now.
-    const boot = Platform.OS === 'web' ? document.getElementById('boot') : null;
-    if (boot) {
-      boot.classList.add('done');
-      setTimeout(() => boot.remove(), 250);
-    }
-  }, [show]);
+    if (loadError) hideBoot();
+  }, [show, loadError]);
 
   if (!show) return null;
   if (loadError) {
@@ -76,6 +72,15 @@ function Gate() {
   // Opened from an invitation or password-reset email: choose a password first.
   const [link, setLink] = useState(authLinkAtStart);
   useEffect(() => (email ? startSync() : undefined), [email]);
+  // public/index.html paints the catalog for visitors and the Sell screen's shapes for this flag.
+  useEffect(() => {
+    if (Platform.OS === 'web' && (ownerDevice || email)) localStorage.setItem('caracebu-owner', '1');
+  }, [ownerDevice, email]);
+  const catalog = syncEnabled && !link && !email && !ownerDevice && !signingIn;
+  // The page's loading screen fades out here, or in the catalog once its products show.
+  useEffect(() => {
+    if (!catalog) hideBoot();
+  }, [catalog]);
   if (syncEnabled && link) {
     const done = () => {
       forgetAuthLink();

@@ -28,7 +28,7 @@
         flex: 1;
       }
       /* Loading skeleton: painted straight from this file, before any JavaScript arrives.
-         The app removes it once it has loaded (src/app/_layout.tsx). Shapes follow the Sell screen. */
+         The app removes it once it is ready (src/ui/boot.ts). Shapes follow the Sell screen. */
       #boot {
         position: fixed;
         inset: 0;
@@ -54,6 +54,38 @@
       @media (max-width: 759px) { #boot .cart { display: none; } }
       @keyframes boot-pulse { 50% { opacity: 0.45; } }
       @media (prefers-reduced-motion: reduce) { #boot .b { animation: none; } }
+      /* After 15 s without the app: a note with Reload (the code may have failed to download). */
+      #boot .slow { position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px); box-sizing: border-box; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 14px; padding: 12px 16px; border-radius: 14px; background: #fff; box-shadow: 0 4px 20px rgba(31, 26, 28, 0.18); color: #1f1a1c; font: 15px/21px Figtree, -apple-system, 'Segoe UI', sans-serif; }
+      #boot .slow button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: #a3264f; color: #fff; font: 700 15px Figtree, -apple-system, 'Segoe UI', sans-serif; cursor: pointer; }
+      /* Visitors: the catalog's shape, then its real products as soon as they arrive, before the
+         app's code has loaded (scripts/head.mjs starts the request). Sizes copy src/ui/Catalog.tsx. */
+      #boot.cat { flex-direction: column; font-family: Figtree, -apple-system, 'Segoe UI', sans-serif; color: #1f1a1c; }
+      #boot.cat > aside, #boot.cat > main, #boot.cat > .cart { display: none; }
+      #boot .c-bar { background: #faf8f7; border-bottom: 1px solid #ece7e5; padding-top: env(safe-area-inset-top); }
+      #boot .c-in { max-width: 1120px; margin: 0 auto; box-sizing: border-box; display: flex; align-items: center; gap: 12px; padding: 10px 20px; }
+      #boot .c-in .brand { flex: 1; padding: 0; font-size: 24px; line-height: 32px; }
+      #boot .c-ig { min-height: 44px; display: flex; align-items: center; box-sizing: border-box; padding: 0 18px; border: 1.5px solid #a3264f; border-radius: 999px; background: #fff; color: #a3264f; font-weight: 700; font-size: 15px; text-decoration: none; }
+      #boot .c-list { flex: 1; overflow: hidden; display: flex; flex-direction: column; width: 100%; max-width: 1120px; margin: 0 auto; box-sizing: border-box; padding: 0 12px; }
+      #boot .c-top { display: flex; flex-direction: column; gap: 14px; padding: 20px 8px 8px; }
+      #boot .c-title { font-weight: 700; font-size: 26px; line-height: 32px; }
+      #boot .c-count { font-size: 13px; line-height: 18px; color: #6b6266; min-height: 18px; }
+      #boot .c-search { min-height: 44px; box-sizing: border-box; display: flex; align-items: center; gap: 8px; padding-left: 14px; border: 1px solid #cfc6c3; border-radius: 999px; color: #6b6266; font-size: 16px; }
+      #boot .c-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+      #boot .c-chips:empty { display: none; }
+      #boot .c-chip { min-height: 44px; box-sizing: border-box; display: flex; align-items: center; padding: 0 16px; border: 1.5px solid #cfc6c3; border-radius: 999px; font-weight: 600; font-size: 15px; }
+      #boot .c-chip.on { border-color: #a3264f; background: #f7ebef; color: #a3264f; }
+      #boot .c-grid { display: grid; margin-bottom: 24px; }
+      #boot .c-card { display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 14px; cursor: pointer; }
+      #boot .c-card.tapped { background: #faf8f7; }
+      #boot .c-photo { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: #f3efee; display: flex; align-items: center; justify-content: center; color: #6b6266; font-weight: 700; font-size: 28px; }
+      #boot .c-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+      #boot .c-badge { position: absolute; left: 6px; bottom: 6px; max-width: 86%; padding: 2px 8px; border-radius: 999px; background: #fff; color: #4a4245; font-weight: 700; font-size: 11px; line-height: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      #boot .c-dim { opacity: 0.55; }
+      #boot .c-name { font-weight: 600; font-size: 15px; line-height: 20px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+      #boot .c-meta { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px; font-weight: 700; font-size: 15px; line-height: 21px; }
+      #boot .c-tag { padding: 2px 8px; border-radius: 999px; font-size: 13px; line-height: 18px; }
+      #boot .c-foot { margin: auto 8px 0; padding: 8px 0 calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid #ece7e5; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px; font-size: 13px; line-height: 18px; color: #6b6266; }
+      #boot .c-foot b { min-height: 44px; display: flex; align-items: center; padding: 0 10px; color: #a3264f; font-size: 15px; }
     </style>
     <script>
       // Offline support: sw.js (made by Workbox at build time) keeps the app on the device.
@@ -123,5 +155,75 @@
         <div class="b" style="height: 52px; border-radius: 26px"></div>
       </div>
     </div>
+    <script>
+      (function () {
+        var boot = document.getElementById('boot');
+        setTimeout(function () {
+          if (!document.body.contains(boot) || boot.classList.contains('done')) return;
+          var note = document.createElement('div');
+          note.className = 'slow';
+          note.setAttribute('role', 'status');
+          note.innerHTML = '<span>This is taking longer than usual. Check your internet connection.</span><button type="button">Reload</button>';
+          note.querySelector('button').onclick = function () { location.reload(); };
+          boot.appendChild(note);
+        }, 15000);
+
+        // Only published builds start the catalog request (scripts/head.mjs). A device that has
+        // ever signed in is the owner's (src/app/_layout.tsx sets the flag): keep the Sell shapes.
+        var owner = true;
+        try { owner = !!localStorage.getItem('caracebu-owner') || Object.keys(localStorage).some(function (k) { return /^sb-.+-auth-token$/.test(k); }); } catch (e) {}
+        if (!window.__catalog || owner) return;
+
+        var esc = function (t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+        var inner = Math.min(innerWidth, 1120) - 40;
+        var columns = Math.max(2, Math.floor((inner + 16) / 176));
+        var bone = '<div class="c-card"><div class="b" style="aspect-ratio: 1"></div><div class="b" style="height: 14px; width: 80%"></div><div class="b" style="height: 14px; width: 45%"></div></div>';
+        boot.classList.add('cat');
+        boot.insertAdjacentHTML('beforeend',
+          '<div class="c-bar"><div class="c-in"><div class="brand">caracebu</div><a class="c-ig" href="https://instagram.com/caracebu">Instagram @caracebu</a></div></div>' +
+          '<div class="c-list"><div class="c-top"><div><div class="c-title">All products</div><div class="c-count"></div></div>' +
+          '<div class="c-search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>Search products</div>' +
+          '<div class="c-chips"></div></div><div class="c-grid" style="grid-template-columns: repeat(' + columns + ', minmax(0, 1fr))">' + new Array(columns * 2 + 1).join(bone) + '</div>' +
+          '<div class="c-foot"><span>Prices in pesos. To order, message us on Instagram.</span><b>Shop owner? Sign in</b></div></div>');
+
+        // Same picks as src/ui/Catalog.tsx, src/ui/Photo.tsx and src/data/catalog.ts.
+        var tints = ['#F3E1E7', '#EFE6DD', '#E2E8EE', '#E6EDE3', '#EDE5F2', '#F4EAD8'];
+        var tintFor = function (t) { var h = 0; Array.from(t).forEach(function (ch) { h = (h * 31 + ch.charCodeAt(0)) >>> 0; }); return tints[h % tints.length]; };
+        var initials = function (t) { return t.split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w[0].toUpperCase(); }).join('') || '·'; };
+        var whole = new Intl.NumberFormat('en-PH', { maximumFractionDigits: 0 });
+        var cents = new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        var peso = function (c) { return '₱' + (c % 100 === 0 ? whole : cents).format(c / 100); };
+        var tag = function (s) { return s === 'out' ? '<span class="c-tag" style="background: #f7ebef; color: #a3264f">Sold out</span>' : s === 'low' ? '<span class="c-tag" style="background: #fff4e5; color: #7a4100">Low on stock</span>' : ''; };
+
+        window.__catalog.then(function (data) {
+          if (!data || boot.classList.contains('done')) return;
+          var products = data.products;
+          var cats = data.categories.filter(function (c) { return products.some(function (p) { return p.categoryIds.indexOf(c.id) >= 0; }); });
+          boot.querySelector('.c-count').textContent = products.length + (products.length === 1 ? ' product' : ' products');
+          if (cats.length) boot.querySelector('.c-chips').innerHTML = '<div class="c-chip on">All products</div>' + cats.map(function (c) { return '<div class="c-chip">' + esc(c.name) + '</div>'; }).join('');
+          var grid = boot.querySelector('.c-grid');
+          grid.innerHTML = products.map(function (p) {
+            var cover = p.photo || (p.variants[0] && p.variants[0].photo);
+            var colours = p.variants.length;
+            var photo = cover
+              ? '<img alt="" src="' + window.__photos + cover.replace(/\.jpg$/, '-480.jpg') + '" data-full="' + window.__photos + cover + '">'
+              : esc(initials(p.name));
+            return '<div class="c-card" data-id="' + esc(p.id) + '"><div class="c-photo' + (p.stock === 'out' ? ' c-dim' : '') + '"' + (cover ? '' : ' style="background: ' + tintFor(p.name) + '"') + '>' + photo +
+              (colours > 1 ? '<span class="c-badge">' + colours + ' colours</span>' : '') + '</div>' +
+              '<div class="c-name">' + esc(p.name) + '</div><div class="c-meta"><span>' + peso(p.price) + '</span>' + tag(p.stock) + '</div></div>';
+          }).join('');
+          // The small grid copy may not be uploaded yet: fall back to the full photo, as the app does.
+          grid.querySelectorAll('img').forEach(function (img) { img.onerror = function () { img.onerror = null; img.src = img.getAttribute('data-full'); }; });
+          // A tap before the app is ready: remember it, and the app opens that product (Catalog.tsx).
+          grid.onclick = function (e) {
+            var card = e.target.closest('.c-card[data-id]');
+            if (!card) return;
+            grid.querySelectorAll('.tapped').forEach(function (c) { c.classList.remove('tapped'); });
+            card.classList.add('tapped');
+            window.__catalogTap = card.getAttribute('data-id');
+          };
+        });
+      })();
+    </script>
   </body>
 </html>
