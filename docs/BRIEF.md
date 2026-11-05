@@ -72,7 +72,10 @@ new session won't know it, so record it here in the same turn.
   new `photos` collection (old devices skip unknown collections in
   `mergeRemote`); re-run the migration before deploying. B: all photos
   in the product record, limit raised to ~10 MB (every product save
-  re-uploads all its photos). The catalog gallery follows either way.
+  re-uploads all its photos). The catalog gallery is built (2026-11-06,
+  `src/ui/Catalog.tsx`): it reads `photos` lists from `public.catalog()`
+  and treats today's single photo as a list of one, so nothing shows
+  until the storage is built.
 
 ## Build notes (version 1, 2026-10-22)
 
