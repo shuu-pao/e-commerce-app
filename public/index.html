@@ -206,7 +206,7 @@
             var cover = p.photo || (p.variants[0] && p.variants[0].photo);
             var colours = p.variants.length;
             var photo = cover
-              ? '<img alt="" src="' + window.__photos + cover.replace(/\.jpg$/, '-480.jpg') + '" data-full="' + window.__photos + cover + '">'
+              ? '<img alt="" src="' + esc(window.__photos + cover.replace(/\.jpg$/, '-480.jpg')) + '" data-full="' + esc(window.__photos + cover) + '">'
               : esc(initials(p.name));
             return '<div class="c-card" data-id="' + esc(p.id) + '"><div class="c-photo' + (p.stock === 'out' ? ' c-dim' : '') + '"' + (cover ? '' : ' style="background: ' + tintFor(p.name) + '"') + '>' + photo +
               (colours > 1 ? '<span class="c-badge">' + colours + ' colours</span>' : '') + '</div>' +
