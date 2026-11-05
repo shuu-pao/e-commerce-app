@@ -55,8 +55,8 @@ new session won't know it, so record it here in the same turn.
   `npx eas-cli@latest deploy --prod`.
 - **The public catalog is live** (2026-10-24, mock v4 approved by the
   client): migration re-run in Supabase, deployed; caracebu.expo.app shows
-  the catalog to visitors. See "Public catalog" below and README. Still to
-  check: a real product switched on, with its photo uploaded.
+  the catalog to visitors. See "Public catalog" below and README. Checked
+  2026-11-05: 6 real products show, with their photos.
 - Next: Supabase Site URL and redirect URLs, invite the client, install on
   the iPad (README). The keep-awake ping works (GitHub secrets set, tested 2026-10-22).
 
