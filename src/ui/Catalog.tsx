@@ -210,17 +210,43 @@ function Card({ product, columns, onPress }: { product: CatalogProduct; columns:
 function Detail({ product, backLabel, onBack }: { product: CatalogProduct; backLabel: string; onBack: () => void }) {
   const insets = useSafeAreaInsets();
   const colours = product.variants.length > 1 ? product.variants : [];
-  // No colour picked on open, so the product's own photo shows first; tapping the picked colour
-  // again unpicks it and brings that photo back (client, 2026-10-27).
+  // No colour picked on open, so the product's own photos show first; tapping a colour shows only
+  // its photos, and tapping it again goes back (client, 2026-10-27 and round 5 question 3).
   const [colourId, setColourId] = useState<string | null>(null);
+  const [index, setIndex] = useState(0);
   const colour = colours.find((v) => v.id === colourId) ?? null;
-  const photo = colour?.photo ?? product.photo ?? product.variants[0]?.photo ?? null;
+  const main = product.photos.length ? product.photos : (product.variants[0]?.photos ?? []);
+  const shown = colour?.photos.length ? colour.photos : main;
+  const at = Math.min(index, Math.max(0, shown.length - 1));
   return (
     <ScrollView style={[StyleSheet.absoluteFill, styles.detail]} contentContainerStyle={[styles.detailContent, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 32 }]}>
       <Button label={`Back to ${backLabel}`} variant="ghost" icon="chevron-back" onPress={onBack} style={styles.back} />
       <View style={styles.detailRow}>
         <View style={[styles.detailPhoto, product.stock === 'out' && styles.dim]}>
-          <Photo uri={photo} name={product.name} fill />
+          <View>
+            <Photo uri={shown[at] ?? null} name={product.name} fill />
+            {shown.length > 1 ? (
+              <View style={styles.position}>
+                <Txt variant="small" weight="semibold" color={colors.ink}>{at + 1} of {shown.length}</Txt>
+              </View>
+            ) : null}
+          </View>
+          {shown.length > 1 ? (
+            <View style={styles.thumbs} accessibilityLabel={colour ? `Photos of ${colour.name}` : 'Product photos'}>
+              {shown.map((uri, i) => (
+                <Pressable
+                  key={`${i}-${uri}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Photo ${i + 1} of ${shown.length}`}
+                  accessibilityState={{ selected: i === at }}
+                  onPress={() => setIndex(i)}
+                  style={[styles.thumb, i === at && { borderColor: colors.accent }]}
+                >
+                  <Photo uri={uri} name={product.name} size={68} />
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
         </View>
         <View style={styles.detailInfo}>
           <Txt variant="title">{product.name}</Txt>
@@ -245,7 +271,10 @@ function Detail({ product, backLabel, onBack }: { product: CatalogProduct; backL
                     accessibilityRole="button"
                     accessibilityLabel={`${v.name}${stockText(v.stock)}`}
                     accessibilityState={{ selected: on }}
-                    onPress={() => setColourId(on ? null : v.id)}
+                    onPress={() => {
+                      setColourId(on ? null : v.id);
+                      setIndex(0);
+                    }}
                     style={({ hovered }) => [styles.colour, (on || hovered) && { borderColor: colors.accent }]}
                   >
                     <Photo uri={v.photo ?? product.photo} name={v.name} size={44} />
@@ -292,7 +321,10 @@ const styles = StyleSheet.create({
   detailContent: { width: '100%', maxWidth: MAX_WIDTH, alignSelf: 'center', paddingHorizontal: PAD, gap: 12 },
   back: { alignSelf: 'flex-start', marginLeft: -10 },
   detailRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', gap: 28 },
-  detailPhoto: { flexGrow: 1, flexBasis: 300, maxWidth: 480 },
+  detailPhoto: { flexGrow: 1, flexBasis: 300, maxWidth: 480, gap: 10 },
+  position: { position: 'absolute', right: 12, bottom: 12, paddingHorizontal: 10, paddingVertical: 3, borderRadius: radius.pill, backgroundColor: 'rgba(255, 255, 255, 0.9)' },
+  thumbs: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  thumb: { borderWidth: 2, borderColor: 'transparent', borderRadius: radius.md + 2 },
   detailInfo: { flexGrow: 1, flexBasis: 300, minWidth: 0, gap: 14 },
   priceRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 10 },
   description: { maxWidth: 560 },

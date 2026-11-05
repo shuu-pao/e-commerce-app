@@ -20,6 +20,8 @@ export interface CatalogVariant {
   id: Id;
   name: string;
   photo: string | null;
+  /** Every photo of the colour, its first photo first (the product page's gallery). */
+  photos: string[];
   stock: StockStatus;
 }
 
@@ -32,6 +34,8 @@ export interface CatalogProduct {
   photo: string | null;
   /** The cover's small copy for the grid; the owner's device uploads it on its next sync, so it may be missing. */
   gridPhoto: string | null;
+  /** Every photo of the product, the cover first (the product page's gallery). */
+  photos: string[];
   variants: CatalogVariant[];
   stock: StockStatus;
 }
@@ -43,6 +47,10 @@ export interface Catalog {
 
 const photoUrl = (path: string | null, grid = false) =>
   path && supabase ? supabase.storage.from(BUCKET).getPublicUrl(grid ? gridName(path) : path).data.publicUrl : null;
+
+/** Photo addresses for a gallery. Until public.catalog() sends `photos`, the one photo it has. */
+const photoUrls = (paths: (string | null)[] | undefined, cover: string | null) =>
+  (paths ?? [cover]).flatMap((path) => photoUrl(path) ?? []);
 
 export async function loadCatalog(): Promise<Catalog> {
   if (!supabase) return { products: [], categories: [] };
@@ -62,7 +70,8 @@ export async function loadCatalog(): Promise<Catalog> {
       ...p,
       photo: photoUrl(p.photo),
       gridPhoto: photoUrl(p.photo ?? p.variants[0]?.photo ?? null, true),
-      variants: p.variants.map((v) => ({ ...v, photo: photoUrl(v.photo) })),
+      photos: photoUrls(p.photos, p.photo),
+      variants: p.variants.map((v) => ({ ...v, photo: photoUrl(v.photo), photos: photoUrls(v.photos, v.photo) })),
     })),
   };
 }
