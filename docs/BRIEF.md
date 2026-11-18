@@ -222,6 +222,23 @@ new session needs to know beyond that:
   the maskable safe circle). The browser tab icon stays the placeholder
   "c" (`assets/images/favicon.png`) and buttons stay berry, per the client.
   Proposal page: https://claude.ai/artifact/FMhZmyUuQEQSUkzde9PhzY.
+- **Bugs from the code read** (fixed 2026-11-19, Decisions): a deleted
+  order no longer comes back when its edit is saved (`stillEditable`,
+  `src/domain/checkout.ts`); Edit product no longer undoes a sale that
+  synced in while it was open, and says "1 piece sold since you opened
+  this" under that colour; Products search matches descriptions and
+  colours like Sell and the catalog (`src/domain/search.ts`); All orders
+  and Reports have a "No event" choice; Reports' event view falls back to
+  Online when the "Selling at" event was deleted. Walkthrough with
+  screenshots of each bug: https://claude.ai/artifact/FEGnZVE2yXAewi2jxZWpT3.
+  Tested in WebKit against a pretend Supabase (the test script answers
+  every request to a fake address, `EXPO_PUBLIC_SUPABASE_URL=https://stub.caracebu.test`,
+  and plays the other device; requests to the real project are blocked).
+- **Accessibility gap, not fixed yet** (found 2026-11-19):
+  react-native-web 0.21 ignores `accessibilityState`, so on the web a
+  screen reader isn't told which choice is checked or selected (Choice,
+  FilterChips, chips on Edit product, sidebar items). Its `aria-checked`
+  / `aria-selected` props would. Sighted use is unaffected.
 - **Colour picker** (fixed 2026-11-18, the client's screenshot from her
   iPad): with 18 colours the Sell screen's "Which colour?" box grew taller
   than the screen, centred, so the name, the last colours and Cancel were
@@ -603,3 +620,5 @@ and the desktop it's a sidebar that stays open.
 | 2026-11-06 | Products: category chips at the top (All products, each category, No category) show only that category's products, as in mock v5 (client, round 5 question 1) |
 | 2026-11-06 | Photos: up to 6 per product (the first is the cover, "Make cover" reorders) and up to 3 per colour. Cashier screens and receipts keep one photo, the colour's first (client, round 5 question 2) |
 | 2026-11-06 | Catalog product: opens on the product's photos (big photo plus small ones); tapping a colour shows only that colour's photos, tapping it again goes back (client, round 5 question 3) |
+| 2026-11-19 | An order deleted while it was open for editing stays deleted: the cart and Checkout say so, and the cart is placed as a new order (new number, today's date) instead of saving over it (developer) |
+| 2026-11-19 | Edit product saves only the stock change typed over what the form showed when it opened; a colour left alone gets no change, so a sale that syncs in meanwhile still counts (developer) |
