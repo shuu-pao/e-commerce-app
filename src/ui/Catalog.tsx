@@ -6,6 +6,7 @@ import { loadCatalog, type Catalog as CatalogData, type CatalogProduct, type Sto
 import { formatPeso } from '@/domain/money';
 import { matchesSearch, searchWords } from '@/domain/search';
 
+import { currentState, pressedState } from './a11y';
 import { hideBoot, takeEarlyTap } from './boot';
 import { Button } from './Button';
 import { Icon } from './Icon';
@@ -237,7 +238,7 @@ function Detail({ product, backLabel, onBack }: { product: CatalogProduct; backL
                   key={`${i}-${uri}`}
                   accessibilityRole="button"
                   accessibilityLabel={`Photo ${i + 1} of ${shown.length}`}
-                  accessibilityState={{ selected: i === at }}
+                  {...currentState(i === at)}
                   onPress={() => setIndex(i)}
                   style={[styles.thumb, i === at && { borderColor: colors.accent }]}
                 >
@@ -269,7 +270,7 @@ function Detail({ product, backLabel, onBack }: { product: CatalogProduct; backL
                     key={v.id}
                     accessibilityRole="button"
                     accessibilityLabel={`${v.name}${stockText(v.stock)}`}
-                    accessibilityState={{ selected: on }}
+                    {...pressedState(on)}
                     onPress={() => {
                       setColourId(on ? null : v.id);
                       setIndex(0);

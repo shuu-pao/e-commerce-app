@@ -161,7 +161,6 @@ function ProductCard({ product, left, columns, onPress }: { product: Product; le
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${product.name}, ${formatPeso(product.price)}, ${soldOut ? 'sold out' : `${left} left`}${colours > 1 ? `, ${colours} colours` : ''}`}
-      accessibilityState={{ disabled: soldOut }}
       disabled={soldOut}
       onPress={onPress}
       style={({ pressed, hovered }) => [styles.card, { flexBasis: `${100 / columns}%`, maxWidth: `${100 / columns}%` }, soldOut && styles.soldOut, (pressed || hovered) && !soldOut && styles.cardActive]}
@@ -211,7 +210,6 @@ function ColourPicker({ product, free, onPick, onClose }: { product: Product | n
                     <Pressable
                       accessibilityRole="button"
                       accessibilityLabel={`${v.name || 'Default'}, ${soldOut ? 'sold out' : `${left} left`}`}
-                      accessibilityState={{ disabled: soldOut }}
                       disabled={soldOut}
                       onPress={() => onPick(product, v)}
                       style={({ hovered }) => [styles.option, hovered && !soldOut && { borderColor: colors.accent }, soldOut && styles.soldOut]}

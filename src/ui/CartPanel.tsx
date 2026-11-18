@@ -129,7 +129,6 @@ function Step({ icon, label, disabled, onPress }: { icon: 'add' | 'remove'; labe
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityState={{ disabled: !!disabled }}
       disabled={disabled}
       onPress={onPress}
       style={({ hovered }) => [styles.step, hovered && !disabled && { borderColor: colors.accent }, disabled && { opacity: 0.35 }]}

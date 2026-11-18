@@ -27,7 +27,7 @@ export function Choice<T extends string>({ options, value, onChange, label, colu
           <Pressable
             key={o.value}
             accessibilityRole="radio"
-            accessibilityState={{ checked: on }}
+            aria-checked={on}
             onPress={() => onChange(o.value)}
             style={({ hovered }) => [
               styles.option,

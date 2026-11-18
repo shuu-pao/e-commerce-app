@@ -8,6 +8,7 @@ import { useAppState, useLive } from '@/data/hooks';
 import { pendingOrderCount } from '@/data/store';
 import { signOut, syncEnabled, syncNow } from '@/data/sync';
 
+import { currentState } from './a11y';
 import { Button } from './Button';
 import { ConfirmDialog } from './ConfirmDialog';
 import { PasswordForm } from './PasswordForm';
@@ -58,7 +59,7 @@ function Item({ label, active, sub, onPress }: { label: string; active: boolean;
   return (
     <Pressable
       accessibilityRole="link"
-      accessibilityState={{ selected: active }}
+      {...currentState(active, 'page')}
       onPress={onPress}
       style={({ hovered }) => [styles.item, sub && styles.sub, (active || hovered) && { backgroundColor: active ? colors.accentSoft : colors.raised }]}
     >

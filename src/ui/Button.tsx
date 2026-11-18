@@ -22,7 +22,7 @@ export function Button({ label, onPress, variant = 'primary', size = 'md', icon,
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityState={{ disabled: !!disabled || !!busy, busy: !!busy }}
+      aria-busy={!!busy}
       disabled={disabled || busy}
       onPress={onPress}
       style={({ pressed, hovered }) => [

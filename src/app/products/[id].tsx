@@ -208,7 +208,7 @@ function Editor({ product }: { product: Product | undefined }) {
                 <Pressable
                   key={c.id}
                   accessibilityRole="checkbox"
-                  accessibilityState={{ checked: on }}
+                  aria-checked={on}
                   onPress={() => setCategoryIds(on ? categoryIds.filter((x) => x !== c.id) : [...categoryIds, c.id])}
                   style={[styles.chip, on && styles.chipOn]}
                 >

@@ -234,11 +234,17 @@ new session needs to know beyond that:
   Tested in WebKit against a pretend Supabase (the test script answers
   every request to a fake address, `EXPO_PUBLIC_SUPABASE_URL=https://stub.caracebu.test`,
   and plays the other device; requests to the real project are blocked).
-- **Accessibility gap, not fixed yet** (found 2026-11-19):
-  react-native-web 0.21 ignores `accessibilityState`, so on the web a
-  screen reader isn't told which choice is checked or selected (Choice,
-  FilterChips, chips on Edit product, sidebar items). Its `aria-checked`
-  / `aria-selected` props would. Sighted use is unaffected.
+- **Control states for screen readers** (fixed 2026-11-19):
+  react-native-web 0.21 ignores `accessibilityState`, so on the web no
+  checked, selected or busy state reached screen readers. Don't use
+  `accessibilityState`. Radios and checkboxes take `aria-checked`;
+  toggle buttons (filter chips, catalog colours) take `pressedState()`
+  and the current page or photo `currentState()` (`src/ui/a11y.ts`:
+  `aria-pressed` / `aria-current` on the web, which React Native's types
+  don't list); Pressable's `disabled` already sets `aria-disabled`;
+  Button sets `aria-busy`. Checked in WebKit (device-only): sidebar,
+  Sell, colour picker, Checkout, Products chips, Edit product. Catalog
+  colours and thumbnails use the same helpers but weren't run.
 - **Colour picker** (fixed 2026-11-18, the client's screenshot from her
   iPad): with 18 colours the Sell screen's "Which colour?" box grew taller
   than the screen, centred, so the name, the last colours and Cancel were

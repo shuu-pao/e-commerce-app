@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { pressedState } from './a11y';
 import { colors, radius, touch } from './theme';
 import { Txt } from './Txt';
 
@@ -18,7 +19,7 @@ export function FilterChips<K extends string | null>({ options, value, onChange,
       {options.map((o) => {
         const on = o.key === value;
         return (
-          <Pressable key={o.key ?? ''} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => onChange(o.key)} style={[styles.chip, on && styles.chipOn]}>
+          <Pressable key={o.key ?? ''} accessibilityRole="button" {...pressedState(on)} onPress={() => onChange(o.key)} style={[styles.chip, on && styles.chipOn]}>
             <Txt weight="semibold" color={on ? colors.accent : colors.ink}>{o.label}</Txt>
           </Pressable>
         );
