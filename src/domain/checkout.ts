@@ -73,6 +73,14 @@ export function checkoutProblems(order: Pick<Order, 'lines' | 'discount' | 'deli
   return problems;
 }
 
+/**
+ * The order a cart in edit mode still edits. None when it was deleted meanwhile (on its receipt or on
+ * the other device): checkout then places the cart as a new order instead of bringing the deleted one back.
+ */
+export function stillEditable(order: Order | undefined): Order | undefined {
+  return order && !order.deleted ? order : undefined;
+}
+
 export function nextOrderNumber(orders: Iterable<Order>): number {
   let max = 0;
   for (const o of orders) if (o.number > max) max = o.number;

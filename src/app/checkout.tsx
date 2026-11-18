@@ -3,7 +3,7 @@ import { Drawer } from 'expo-router/drawer';
 import { useMemo, useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import { change, checkoutProblems, formatOrderNumber, totals } from '@/domain/checkout';
+import { change, checkoutProblems, formatOrderNumber, stillEditable, totals } from '@/domain/checkout';
 import { centsToInput, formatPeso, parsePeso } from '@/domain/money';
 import type { Discount, Id, Order, PaymentMethod } from '@/domain/types';
 import { ONLINE_EVENT_ID, PAYMENT_METHODS } from '@/domain/types';
@@ -11,6 +11,7 @@ import { useAppState, useLive } from '@/data/hooks';
 import { placeOrder } from '@/data/store';
 import { Button } from '@/ui/Button';
 import { Choice } from '@/ui/Choice';
+import { DeletedOrderNote } from '@/ui/DeletedOrderNote';
 import { Field } from '@/ui/Field';
 import { OrderLines } from '@/ui/OrderLines';
 import { Empty, Row } from '@/ui/Screen';
@@ -46,25 +47,28 @@ export default function Checkout() {
 
 function CheckoutForm() {
   const cart = useAppState((s) => s.cart);
-  const editing = useAppState((s) => (s.cart.editingOrderId ? s.db.orders[s.cart.editingOrderId] : undefined));
+  // The order the cart was opened from fills in the form; it is only saved over while it still exists.
+  const opened = useAppState((s) => (s.cart.editingOrderId ? s.db.orders[s.cart.editingOrderId] : undefined));
+  const editing = stillEditable(opened);
+  const deletedMeanwhile = !!opened && !editing;
   const currentEventId = useAppState((s) => s.settings.currentEventId);
   const events = useLive('events');
   const { width } = useWindowDimensions();
   const twoColumns = (width >= WIDE ? width - 260 : width) >= 900;
 
-  const [eventId, setEventId] = useState<Id | null>(editing ? editing.eventId : currentEventId);
-  const [[discountKind, discountText], setDiscount] = useState(() => initialDiscount(editing));
-  const [buyerName, setBuyerName] = useState(editing?.buyer?.name ?? '');
-  const [address, setAddress] = useState(editing?.buyer?.address ?? '');
-  const [feeText, setFeeText] = useState(editing?.deliveryFee ? centsToInput(editing.deliveryFee) : '');
-  const [split, setSplit] = useState((editing?.payments.length ?? 0) > 1);
-  const [method, setMethod] = useState<PaymentMethod>(editing?.payments[0]?.method ?? 'cash');
+  const [eventId, setEventId] = useState<Id | null>(opened ? opened.eventId : currentEventId);
+  const [[discountKind, discountText], setDiscount] = useState(() => initialDiscount(opened));
+  const [buyerName, setBuyerName] = useState(opened?.buyer?.name ?? '');
+  const [address, setAddress] = useState(opened?.buyer?.address ?? '');
+  const [feeText, setFeeText] = useState(opened?.deliveryFee ? centsToInput(opened.deliveryFee) : '');
+  const [split, setSplit] = useState((opened?.payments.length ?? 0) > 1);
+  const [method, setMethod] = useState<PaymentMethod>(opened?.payments[0]?.method ?? 'cash');
   const [rows, setRows] = useState<SplitRow[]>(() =>
-    editing && editing.payments.length > 1
-      ? editing.payments.map((p) => ({ method: p.method, text: centsToInput(p.amount) }))
+    opened && opened.payments.length > 1
+      ? opened.payments.map((p) => ({ method: p.method, text: centsToInput(p.amount) }))
       : [{ method: 'cash', text: '' }, { method: 'gcash', text: '' }],
   );
-  const [cashText, setCashText] = useState(editing?.cashReceived ? centsToInput(editing.cashReceived) : '');
+  const [cashText, setCashText] = useState(opened?.cashReceived ? centsToInput(opened.cashReceived) : '');
   const [tried, setTried] = useState(false);
 
   const online = eventId === ONLINE_EVENT_ID;
@@ -234,7 +238,12 @@ function CheckoutForm() {
           {problems.map((p) => <Txt key={p} color={colors.accent} weight="semibold">{p}</Txt>)}
         </View>
       ) : null}
-      <Button label={editing ? `Save order ${formatOrderNumber(editing.number)}` : 'Place order'} size="lg" onPress={place} />
+      {deletedMeanwhile && opened ? <DeletedOrderNote number={opened.number} /> : null}
+      <Button
+        label={editing ? `Save order ${formatOrderNumber(editing.number)}` : deletedMeanwhile ? 'Place as a new order' : 'Place order'}
+        size="lg"
+        onPress={place}
+      />
     </View>
   );
 

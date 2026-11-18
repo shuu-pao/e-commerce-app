@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { formatOrderNumber, lineTotal, totals } from '@/domain/checkout';
+import { formatOrderNumber, lineTotal, stillEditable, totals } from '@/domain/checkout';
 import { formatPeso } from '@/domain/money';
 import type { OrderLine } from '@/domain/types';
 import { useAppState, useStockLeft } from '@/data/hooks';
@@ -11,6 +11,7 @@ import { cartClear, cartSetQty } from '@/data/store';
 
 import { Button } from './Button';
 import { ConfirmDialog } from './ConfirmDialog';
+import { DeletedOrderNote } from './DeletedOrderNote';
 import { Photo } from './Photo';
 import { colors, radius, touch } from './theme';
 import { Txt } from './Txt';
@@ -18,7 +19,9 @@ import { Txt } from './Txt';
 /** The running order beside the products (or in a sheet on narrow screens). */
 export function CartPanel({ onCheckout }: { onCheckout?: () => void }) {
   const cart = useAppState((s) => s.cart);
-  const editing = useAppState((s) => (s.cart.editingOrderId ? s.db.orders[s.cart.editingOrderId] : undefined));
+  const opened = useAppState((s) => (s.cart.editingOrderId ? s.db.orders[s.cart.editingOrderId] : undefined));
+  const editing = stillEditable(opened);
+  const deletedMeanwhile = !!opened && !editing;
   const products = useAppState((s) => s.db.products);
   const stock = useStockLeft(true);
   const [confirmClear, setConfirmClear] = useState(false);
@@ -45,6 +48,11 @@ export function CartPanel({ onCheckout }: { onCheckout?: () => void }) {
           <Button label={editing ? 'Stop editing' : 'Clear'} variant="ghost" onPress={() => setConfirmClear(true)} />
         ) : null}
       </View>
+      {deletedMeanwhile && opened && cart.lines.length > 0 ? (
+        <View style={styles.deleted}>
+          <DeletedOrderNote number={opened.number} />
+        </View>
+      ) : null}
 
       {cart.lines.length === 0 ? (
         <View style={styles.empty}>
@@ -135,6 +143,7 @@ const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: colors.white },
   head: { minHeight: 60, flexDirection: 'row', alignItems: 'center', paddingLeft: 20, paddingRight: 8, borderBottomWidth: 1, borderBottomColor: colors.line },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  deleted: { paddingHorizontal: 20, paddingTop: 12 },
   lines: { paddingHorizontal: 20 },
   line: { paddingVertical: 12, gap: 6, borderBottomWidth: 1, borderBottomColor: colors.line },
   lineTop: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },

@@ -3,7 +3,7 @@
 // the outbox and merges what the other device changed.
 import { randomUUID } from 'expo-crypto';
 
-import { nextOrderNumber } from '@/domain/checkout';
+import { nextOrderNumber, stillEditable } from '@/domain/checkout';
 import { mergeRemote, nextStamp, type Tables } from '@/domain/merge';
 import { planPhotos, type PhotoItem } from '@/domain/photos';
 import type { CollectionName, Collections, Id, Order, OrderLine, Product, ShopEvent, StockAdjustment } from '@/domain/types';
@@ -277,9 +277,12 @@ export function cartEditOrder(order: Order) {
 
 export type OrderDraft = Omit<Order, 'id' | 'updatedAt' | 'number' | 'createdAt'>;
 
-/** Saves the checkout as a new order, or updates the order being edited, then empties the cart. */
+/**
+ * Saves the checkout as a new order, or updates the order being edited, then empties the cart.
+ * An order deleted while it was open for editing stays deleted: the cart becomes a new order.
+ */
 export function placeOrder(draft: OrderDraft): Order {
-  const editing = state.cart.editingOrderId ? state.db.orders[state.cart.editingOrderId] : undefined;
+  const editing = stillEditable(state.cart.editingOrderId ? state.db.orders[state.cart.editingOrderId] : undefined);
   const [order] = save('orders', {
     ...draft,
     id: editing?.id ?? newId(),
