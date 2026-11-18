@@ -222,8 +222,18 @@ new session needs to know beyond that:
   is `overflow: hidden`). Now the box is at most the screen's height, the
   colours scroll between the fixed name and Cancel, and from 6 colours on
   a screen 700 pt or wider they sit in two columns (18 fit on the iPad in
-  portrait). Not yet tested in a browser (written on a computer without
-  Node).
+  portrait). Each column is half the list's own width: a fixed width
+  wrapped the second column under the first once a scrollbar showed.
+  Tested in Brave (device-only, 18 colours with her photos) at iPad
+  portrait, iPad landscape and phone sizes; deployed 2026-11-19. Not
+  tested in WebKit: on the developer's new PC (Node 26) `npx playwright
+  install webkit` downloads but hangs while unpacking, also outside
+  Claude Code. Waiting on the client's try on her iPad.
+- **Developer's PC setup** (2026-11-19): browser tests go through a
+  user-level Playwright MCP server that drives Brave (`playwright-brave`,
+  `--executable-path` to brave.exe); the repo's Playwright plugin is off
+  (it needs Google Chrome). PowerShell needs `Set-ExecutionPolicy -Scope
+  CurrentUser RemoteSigned` for `npx`.
 - `npm audit` lists issues in Expo's build tooling (config plugins), not in
   code that ships to the browser; they clear with Expo SDK updates.
 
