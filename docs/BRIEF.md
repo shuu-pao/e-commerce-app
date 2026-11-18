@@ -231,16 +231,19 @@ new session needs to know beyond that:
   a screen 700 pt or wider they sit in two columns (18 fit on the iPad in
   portrait). Each column is half the list's own width: a fixed width
   wrapped the second column under the first once a scrollbar showed.
-  Tested in Brave (device-only, 18 colours with her photos) at iPad
-  portrait, iPad landscape and phone sizes; deployed 2026-11-19. Not
-  tested in WebKit: on the developer's new PC (Node 26) `npx playwright
-  install webkit` downloads but hangs while unpacking, also outside
-  Claude Code. Waiting on the client's try on her iPad.
+  Tested in Brave and in WebKit 27.2 (device-only, 18 colours with her
+  photos) at iPad portrait, iPad landscape and phone sizes; deployed
+  2026-11-19. Waiting on the client's try on her iPad.
 - **Developer's PC setup** (2026-11-19): browser tests go through a
   user-level Playwright MCP server that drives Brave (`playwright-brave`,
   `--executable-path` to brave.exe); the repo's Playwright plugin is off
   (it needs Google Chrome). PowerShell needs `Set-ExecutionPolicy -Scope
-  CurrentUser RemoteSigned` for `npx`.
+  CurrentUser RemoteSigned` for `npx`. For WebKit, use a current
+  Playwright (1.65.1 works): Playwright 1.57 on Node 26 hangs at
+  "extracting archive" (it works on Node 24, and Windows unzips the same
+  file in 4 s), so the cause is that version, not antivirus or the PC.
+  WebKit tests run as a Node script with `playwright` in a scratch folder,
+  against the device-only server.
 - `npm audit` lists issues in Expo's build tooling (config plugins), not in
   code that ships to the browser; they clear with Expo SDK updates.
 
