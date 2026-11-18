@@ -187,9 +187,10 @@ function ColourPicker({ product, free, onPick, onClose }: { product: Product | n
   const insets = useSafeAreaInsets();
   const maxHeight = height - insets.top - insets.bottom - 48;
   const twoColumns = !!product && product.variants.length >= TWO_COLUMNS_FROM && width >= 700;
-  // The box's inner width, so two columns split it exactly (percentages and gaps don't add up on every browser).
   const boxWidth = Math.min(width - 48, twoColumns ? 720 : 440);
-  const optionWidth = twoColumns ? (boxWidth - 48 - PICKER_GAP) / 2 : undefined;
+  // Each column is half of the list's own width, which leaves out a scrollbar when one shows (a
+  // fixed width wrapped the second column under the first as soon as the list scrolled).
+  const cell = (i: number) => (!twoColumns ? styles.oneColumn : i % 2 ? styles.rightColumn : styles.leftColumn);
   return (
     <Modal visible={!!product} transparent animationType="fade" onRequestClose={onClose}>
       <View style={[styles.scrim, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}>
@@ -202,25 +203,26 @@ function ColourPicker({ product, free, onPick, onClose }: { product: Product | n
               <Txt color={colors.muted}>Which colour?</Txt>
             </View>
             <ScrollView style={styles.optionsScroll} contentContainerStyle={styles.options}>
-              {product.variants.map((v) => {
+              {product.variants.map((v, i) => {
                 const left = free(v.id);
                 const soldOut = left <= 0;
                 return (
-                  <Pressable
-                    key={v.id}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${v.name || 'Default'}, ${soldOut ? 'sold out' : `${left} left`}`}
-                    accessibilityState={{ disabled: soldOut }}
-                    disabled={soldOut}
-                    onPress={() => onPick(product, v)}
-                    style={({ hovered }) => [styles.option, { width: optionWidth ?? '100%' }, hovered && !soldOut && { borderColor: colors.accent }, soldOut && styles.soldOut]}
-                  >
-                    <Photo uri={v.photo ?? product.photo} name={v.name || product.name} size={44} />
-                    <Txt weight="semibold" numberOfLines={2} style={styles.optionName}>{v.name || 'Default'}</Txt>
-                    <Txt variant="small" weight={soldOut ? 'bold' : undefined} color={soldOut ? colors.accent : colors.muted}>
-                      {soldOut ? 'Sold out' : `${left} left`}
-                    </Txt>
-                  </Pressable>
+                  <View key={v.id} style={cell(i)}>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${v.name || 'Default'}, ${soldOut ? 'sold out' : `${left} left`}`}
+                      accessibilityState={{ disabled: soldOut }}
+                      disabled={soldOut}
+                      onPress={() => onPick(product, v)}
+                      style={({ hovered }) => [styles.option, hovered && !soldOut && { borderColor: colors.accent }, soldOut && styles.soldOut]}
+                    >
+                      <Photo uri={v.photo ?? product.photo} name={v.name || product.name} size={44} />
+                      <Txt weight="semibold" numberOfLines={2} style={styles.optionName}>{v.name || 'Default'}</Txt>
+                      <Txt variant="small" weight={soldOut ? 'bold' : undefined} color={soldOut ? colors.accent : colors.muted}>
+                        {soldOut ? 'Sold out' : `${left} left`}
+                      </Txt>
+                    </Pressable>
+                  </View>
                 );
               })}
             </ScrollView>
@@ -256,7 +258,10 @@ const styles = StyleSheet.create({
   picker: { width: '100%', gap: 12, padding: 24, borderRadius: radius.lg + 2, backgroundColor: colors.white },
   pickerHead: { gap: 2 },
   optionsScroll: { flexGrow: 0, flexShrink: 1 },
-  options: { flexDirection: 'row', flexWrap: 'wrap', gap: PICKER_GAP },
+  options: { flexDirection: 'row', flexWrap: 'wrap', rowGap: PICKER_GAP },
+  oneColumn: { width: '100%' },
+  leftColumn: { width: '50%', paddingRight: PICKER_GAP / 2 },
+  rightColumn: { width: '50%', paddingLeft: PICKER_GAP / 2 },
   option: { minHeight: 60, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: colors.lineStrong, borderRadius: radius.lg },
   optionName: { flex: 1, minWidth: 0 },
 });
