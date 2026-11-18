@@ -20,6 +20,10 @@ import { RowsSkeleton, useFirstDownload } from '@/ui/Skeleton';
 import { colors, radius, WIDE } from '@/ui/theme';
 import { Txt } from '@/ui/Txt';
 
+/** Event filter values besides the events' own ids (which are UUIDs, so these can't clash). */
+const ALL_EVENTS = 'all';
+const NO_EVENT = 'none';
+
 export default function Orders() {
   const orders = useAppState((s) => s.db.orders);
   const outbox = useAppState((s) => s.outbox);
@@ -28,14 +32,14 @@ export default function Orders() {
   const today = dateKey(new Date());
   const [from, setFrom] = useState(addDays(today, -6));
   const [to, setTo] = useState(today);
-  const [eventId, setEventId] = useState<string>('all');
+  const [eventId, setEventId] = useState<string>(ALL_EVENTS);
   const [notice, setNotice] = useState<string | null>(null);
   const firstDownload = useFirstDownload();
   const { width } = useWindowDimensions();
   const table = (width >= WIDE ? width - 260 : width) >= 760;
 
   const shown = useMemo(
-    () => filterOrders(Object.values(orders), { range: { from, to }, eventId: eventId === 'all' ? undefined : eventId || null }),
+    () => filterOrders(Object.values(orders), { range: { from, to }, eventId: eventId === ALL_EVENTS ? undefined : eventId === NO_EVENT ? null : eventId }),
     [orders, from, to, eventId],
   );
   const s = summarize(shown);
@@ -46,8 +50,9 @@ export default function Orders() {
   };
 
   const eventOptions = [
-    { value: 'all', label: 'All events' },
+    { value: ALL_EVENTS, label: 'All events' },
     ...[...events].sort((a, b) => a.name.localeCompare(b.name)).map((e) => ({ value: e.id, label: e.name })),
+    { value: NO_EVENT, label: 'No event' },
   ];
 
   return (

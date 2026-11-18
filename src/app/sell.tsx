@@ -6,6 +6,7 @@ import { FlatList, Modal, Pressable, ScrollView, StyleSheet, TextInput, useWindo
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { formatPeso } from '@/domain/money';
+import { matchesSearch, searchWords } from '@/domain/search';
 import { totals } from '@/domain/checkout';
 import type { Product, Variant } from '@/domain/types';
 import { useAppState, useLive, useStockLeft } from '@/data/hooks';
@@ -45,10 +46,9 @@ export default function Sell() {
     (stock.get(variantId) ?? 0) - cart.lines.filter((l) => l.variantId === variantId).reduce((n, l) => n + l.qty, 0);
 
   const shown = useMemo(() => {
-    const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const words = searchWords(query);
     return products
-      .filter((p) => !category || p.categoryIds.includes(category))
-      .filter((p) => words.every((w) => `${p.name} ${p.description} ${p.variants.map((v) => v.name).join(' ')}`.toLowerCase().includes(w)))
+      .filter((p) => (!category || p.categoryIds.includes(category)) && matchesSearch(p, words))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [products, category, query]);
 

@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { loadCatalog, type Catalog as CatalogData, type CatalogProduct, type StockStatus } from '@/data/catalog';
 import { formatPeso } from '@/domain/money';
+import { matchesSearch, searchWords } from '@/domain/search';
 
 import { hideBoot, takeEarlyTap } from './boot';
 import { Button } from './Button';
@@ -78,10 +79,8 @@ export function Catalog({ onSignIn }: { onSignIn: () => void }) {
   );
   const heading = categories.find((c) => c.id === category)?.name ?? 'All products';
   const shown = useMemo(() => {
-    const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    return products
-      .filter((p) => !category || p.categoryIds.includes(category))
-      .filter((p) => words.every((w) => `${p.name} ${p.description} ${p.variants.map((v) => v.name).join(' ')}`.toLowerCase().includes(w)));
+    const words = searchWords(query);
+    return products.filter((p) => (!category || p.categoryIds.includes(category)) && matchesSearch(p, words));
   }, [products, category, query]);
 
   const inner = Math.min(width, MAX_WIDTH) - PAD * 2;

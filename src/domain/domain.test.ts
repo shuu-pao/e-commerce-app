@@ -3,13 +3,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { change, checkoutProblems, discountAmount, formatOrderNumber, nextOrderNumber, totals } from './checkout.ts';
+import { change, checkoutProblems, discountAmount, formatOrderNumber, nextOrderNumber, stillEditable, totals } from './checkout.ts';
 import { ordersToCsv } from './csv.ts';
 import { addMonths, dateKey, isDateKey, monthEnd, weekStart } from './dates.ts';
 import { mergeRemote, nextStamp } from './merge.ts';
 import { photoList, planPhotos } from './photos.ts';
 import { formatPeso, parsePeso } from './money.ts';
 import { bestSellers, byDay, byPayment, filterOrders, periodRange, shiftPeriod, summarize } from './reports.ts';
+import { matchesSearch, searchWords } from './search.ts';
 import { stockByVariant } from './stock.ts';
 import type { Order, OrderLine, ProductPhoto, StockAdjustment } from './types.ts';
 
@@ -163,4 +164,26 @@ test('photos: cover in the product, the rest as records rewritten only when they
     { id: 'a', productId: 'p', variantId: null, position: 2, photo: 'A' },
   ]);
   assert.deepEqual(plan.drop.map((r) => r.id).sort(), ['b', 'y']);
+});
+
+test('checkout: an order deleted while it was open for editing is no longer edited', () => {
+  assert.equal(stillEditable(order())?.id, 'o1');
+  assert.equal(stillEditable(order({ deleted: true })), undefined);
+  assert.equal(stillEditable(undefined), undefined); // not on this device (yet)
+});
+
+test('search: every word, in the name, description or a colour, any order and case', () => {
+  const clip = { name: 'Daisy claw clip', description: 'Acetate, 8 cm', variants: [{ name: 'Yellow' }, { name: 'White' }] };
+  assert.deepEqual(searchWords('  Daisy   YELLOW '), ['daisy', 'yellow']);
+  assert.ok(matchesSearch(clip, []));
+  assert.ok(matchesSearch(clip, searchWords('yellow')));
+  assert.ok(matchesSearch(clip, searchWords('acetate daisy')));
+  assert.ok(!matchesSearch(clip, searchWords('daisy pink')));
+});
+
+test('reports: "No event" lists only orders without an event', () => {
+  const orders = [order({ id: 'a', eventId: null }), order({ id: 'b', eventId: 'fair' })];
+  assert.deepEqual(filterOrders(orders, { eventId: null }).map((o) => o.id), ['a']);
+  assert.deepEqual(filterOrders(orders, { eventId: 'fair' }).map((o) => o.id), ['b']);
+  assert.equal(filterOrders(orders, {}).length, 2);
 });

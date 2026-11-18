@@ -19,6 +19,8 @@ import { colors } from '@/ui/theme';
 import { Txt } from '@/ui/Txt';
 
 type View_ = Period | 'event' | 'range';
+/** The event view's choice for orders sold without an event (event ids are UUIDs, so it can't clash). */
+const NO_EVENT = 'none';
 const VIEWS: { value: View_; label: string }[] = [
   { value: 'day', label: 'Day' },
   { value: 'week', label: 'Week' },
@@ -40,7 +42,12 @@ export default function Reports() {
   const view: View_ = isView(params.view) ? params.view : 'day';
   const setView = (v: View_) => router.setParams({ view: v });
   const [anchor, setAnchor] = useState(today);
-  const [eventId, setEventId] = useState(currentEventId ?? ONLINE_EVENT_ID);
+  // The event view opens on the event being sold at. One deleted (here or on the other device) falls
+  // back to Online, so the view never opens on an event that isn't in the list.
+  const [picked, setPicked] = useState<string | null>(null);
+  const exists = (id: string | null) => !!id && (id === NO_EVENT || events.some((e) => e.id === id));
+  const eventId = exists(picked) ? picked! : exists(currentEventId) ? currentEventId! : ONLINE_EVENT_ID;
+  const eventFilter = eventId === NO_EVENT ? null : eventId;
   const [range, setRange] = useState<Range>({ from: addDays(today, -29), to: today });
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -49,8 +56,8 @@ export default function Reports() {
   const from = activeRange?.from;
   const to = activeRange?.to;
   const shown = useMemo(
-    () => filterOrders(Object.values(orders), view === 'event' ? { eventId } : { range: from && to ? { from, to } : undefined }),
-    [orders, view, eventId, from, to],
+    () => filterOrders(Object.values(orders), view === 'event' ? { eventId: eventFilter } : { range: from && to ? { from, to } : undefined }),
+    [orders, view, eventFilter, from, to],
   );
   const s = summarize(shown);
   const days = byDay(shown);
@@ -64,7 +71,7 @@ export default function Reports() {
     : '';
 
   const fileName =
-    view === 'event' ? `caracebu-${eventName(eventId).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+    view === 'event' ? `caracebu-${eventName(eventFilter).toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
     : `caracebu-${activeRange?.from}-to-${activeRange?.to}`;
 
   return (
@@ -93,9 +100,12 @@ export default function Reports() {
       ) : view === 'event' ? (
         <Choice
           label="Event"
-          options={[...events].sort((a, b) => a.name.localeCompare(b.name)).map((e) => ({ value: e.id, label: e.name }))}
+          options={[
+            ...[...events].sort((a, b) => a.name.localeCompare(b.name)).map((e) => ({ value: e.id, label: e.name })),
+            { value: NO_EVENT, label: 'No event' },
+          ]}
           value={eventId}
-          onChange={setEventId}
+          onChange={setPicked}
         />
       ) : (
         <View style={styles.nav}>

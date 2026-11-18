@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { formatPeso } from '@/domain/money';
+import { matchesSearch, searchWords } from '@/domain/search';
 import { useAppState, useLive, useStockLeft } from '@/data/hooks';
 import { loadSampleData, sampleDataAllowed } from '@/data/sample';
 import { Button } from '@/ui/Button';
@@ -34,14 +35,14 @@ export default function Products() {
   const filterName = chips.find((c) => c.key === filter)!.label;
 
   const shown = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const words = searchWords(query);
     const inFilter = (categoryIds: string[]) => {
       if (filter === ALL) return true;
       if (filter === NONE) return !categoryIds.some((id) => categories[id] && !categories[id].deleted);
       return categoryIds.includes(filter);
     };
     return products
-      .filter((p) => inFilter(p.categoryIds) && (!q || p.name.toLowerCase().includes(q)))
+      .filter((p) => inFilter(p.categoryIds) && matchesSearch(p, words))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [products, categories, filter, query]);
 
