@@ -34,12 +34,23 @@ export default function ProductScreen() {
   return <Editor key={`${id}-${focus}`} product={id === 'new' ? undefined : product} />;
 }
 
+/** Stock that changed while the form was open (a sale on the iPad synced in); saving keeps that change. */
+function changedSinceOpened(diff: number): string {
+  const n = Math.abs(diff);
+  return `${n} ${n === 1 ? 'piece' : 'pieces'} ${diff < 0 ? 'sold' : 'added'} since you opened this. Saving keeps ${diff < 0 ? 'the sale' : 'it'}.`;
+}
+
 interface VariantForm {
   id: Id;
   name: string;
   /** Its photos, the first one first (the one Sell, the cart and receipts show). */
   photos: PhotoItem[];
   stockText: string;
+  /**
+   * The stock this form showed when it opened. Saving applies only the change typed over it, so a sale
+   * that syncs in while the form is open still counts (a colour left alone gets no stock change at all).
+   */
+  shownStock: number;
   isNew: boolean;
 }
 
@@ -61,8 +72,9 @@ function Editor({ product }: { product: Product | undefined }) {
         name: v.name,
         photos: photoList(v.photo, Object.values(records), product.id, v.id),
         stockText: String(stock.get(v.id) ?? 0),
+        shownStock: stock.get(v.id) ?? 0,
         isNew: false,
-      })) ?? [{ id: newId(), name: '', photos: [], stockText: '0', isNew: true }],
+      })) ?? [{ id: newId(), name: '', photos: [], stockText: '0', shownStock: 0, isNew: true }],
   );
   const [tried, setTried] = useState(false);
   const [busyPhoto, setBusyPhoto] = useState<string | null>(null);
@@ -119,8 +131,7 @@ function Editor({ product }: { product: Product | undefined }) {
     });
     savePhotos(id, [{ variantId: null, items: photos }, ...variants.map((v) => ({ variantId: v.id, items: v.photos }))]);
     for (const v of variants) {
-      const current = v.isNew ? 0 : (stock.get(v.id) ?? 0);
-      adjustStock(id, v.id, deltaToReach(current, Number(v.stockText)));
+      adjustStock(id, v.id, deltaToReach(v.shownStock, Number(v.stockText)));
     }
     router.replace('/products');
   };
@@ -257,9 +268,11 @@ function Editor({ product }: { product: Product | undefined }) {
               hint={
                 !v.isNew && (stock.get(v.id) ?? 0) < 0
                   ? 'Oversold: sold more than counted.'
-                  : showInCatalog && Number(v.stockText) > 0 && Number(v.stockText) <= LOW_STOCK
-                    ? 'Catalog shows Low on stock.'
-                    : undefined
+                  : !v.isNew && (stock.get(v.id) ?? 0) !== v.shownStock
+                    ? changedSinceOpened((stock.get(v.id) ?? 0) - v.shownStock)
+                    : showInCatalog && Number(v.stockText) > 0 && Number(v.stockText) <= LOW_STOCK
+                      ? 'Catalog shows Low on stock.'
+                      : undefined
               }
               style={styles.variantStock}
             />
@@ -271,7 +284,7 @@ function Editor({ product }: { product: Product | undefined }) {
           </View>
         ))}
         <Txt variant="small">Tap a colour&apos;s photo to remove it. The first photo of each colour shows in the cart and on receipts.</Txt>
-        <Button label="Add colour" variant="outline" icon="add" onPress={() => setVariants([...variants, { id: newId(), name: '', photos: [], stockText: '0', isNew: true }])} style={styles.addColour} />
+        <Button label="Add colour" variant="outline" icon="add" onPress={() => setVariants([...variants, { id: newId(), name: '', photos: [], stockText: '0', shownStock: 0, isNew: true }])} style={styles.addColour} />
       </Card>
 
       {tried && !valid ? <Txt color={colors.accent} weight="semibold">Fix the highlighted fields to save.</Txt> : null}
