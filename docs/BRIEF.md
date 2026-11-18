@@ -52,7 +52,14 @@ new session won't know it, so record it here in the same turn.
   syncing (`vcbdnggmzbtpqnldrxjl`). The live data is the client's alone:
   the developer's test login comes off `shop_owners` (2026-10-24) and
   testing never uses the live project (Testing, below). Redeploy after changes: `npm run build:web`, then
-  `npx eas-cli@latest deploy --prod`.
+  `npx eas-cli@latest deploy --prod`. Then check that the live page
+  serves the new code: the `entry-….js` name in
+  `curl -s https://caracebu.expo.app/?v=1` must match `dist/index.html`.
+  On 2026-11-19 `deploy --prod` said "Promoted deployment to production"
+  but the address kept the old version for 5+ minutes (not a cache:
+  a cache-busting query got it too); `npx eas-cli@latest deploy:alias
+  --prod --id <id>` (the id is in the deployment URL,
+  `caracebu--<id>.expo.app`) switched it within 15 s.
 - **The public catalog is live** (2026-10-24, mock v4 approved by the
   client): migration re-run in Supabase, deployed; caracebu.expo.app shows
   the catalog to visitors. See "Public catalog" below and README. Checked
