@@ -215,6 +215,15 @@ new session needs to know beyond that:
   the maskable safe circle). The browser tab icon stays the placeholder
   "c" (`assets/images/favicon.png`) and buttons stay berry, per the client.
   Proposal page: https://claude.ai/artifact/FMhZmyUuQEQSUkzde9PhzY.
+- **Colour picker** (fixed 2026-11-18, the client's screenshot from her
+  iPad): with 18 colours the Sell screen's "Which colour?" box grew taller
+  than the screen, centred, so the name, the last colours and Cancel were
+  off screen and nothing scrolled (the page itself never scrolls: `body`
+  is `overflow: hidden`). Now the box is at most the screen's height, the
+  colours scroll between the fixed name and Cancel, and from 6 colours on
+  a screen 700 pt or wider they sit in two columns (18 fit on the iPad in
+  portrait). Not yet tested in a browser (written on a computer without
+  Node).
 - `npm audit` lists issues in Expo's build tooling (config plugins), not in
   code that ships to the browser; they clear with Expo SDK updates.
 
@@ -267,9 +276,18 @@ the developer.
 
 ## Open questions
 
-None open. The client answered round 5 on 2026-11-06 (Decisions below).
 New client questions get batched here and asked all at once; never
-trickle them out one reply at a time.
+trickle them out one reply at a time. The client answered round 5 on
+2026-11-06 (Decisions below).
+
+Waiting for the next round:
+1. (2026-11-18) Her "250 - hairclip" has 18 colours whose names repeat a
+   style ("White - barrette la france", "Black - vintage glitter", "Pink -
+   candy glitter"). Would she rather have each style as its own product
+   with plain colour names? Shorter colour pickers, clearer receipts and
+   reports, and the catalog shows each style with its own photos. Either
+   way works: the colour picker now scrolls and uses two columns on the
+   iPad (Build notes).
 
 Round 5, for the record (2026-10-27, the mock's row 5; asked on the
 client questions page 2026-11-05 with before and after pictures). The client asked for: several photos on a product and on each
