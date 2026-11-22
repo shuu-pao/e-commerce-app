@@ -89,13 +89,14 @@ new session won't know it, so record it here in the same turn.
   including the upgrade of a table made by the old file), the editor in
   WebKit and Chromium (device-only), and sync against a stubbed server.
 
-- **Invoices and receipts built (2026-11-22), not deployed yet.** Rounds 6
-  and 7 as decided (Decisions, Build notes "Invoices"). **To deploy: re-run
-  the migration in Supabase first** (it allows the new `shop` records), then
-  `npm run build:web` and deploy. In the other order, orders still sync
-  but saving Shop details shows a sync error until the migration runs.
-  After deploying: the client fills in Shop details (her name, phone,
-  address, GCash and BPI accounts, QR code picture).
+- **Invoices and receipts deployed (2026-11-22)**, merged into
+  `main`. Rounds 6 and 7 as decided
+  (Decisions, Build notes "Invoices"). The migration was re-run in Supabase
+  first (it allows the new `shop` records), and the live page serves the
+  new build. Next: the client fills in Shop details (her name, phone,
+  address, GCash and BPI accounts, QR code picture), then tries an invoice
+  and a receipt on her iPad (picture and PDF; WebKit and the share sheet
+  are untested).
 
 ## Build notes (version 1, 2026-10-22)
 
