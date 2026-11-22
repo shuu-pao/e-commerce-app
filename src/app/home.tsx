@@ -24,8 +24,8 @@ export default function Home() {
   useFocusEffect(useCallback(() => () => setShown(false), []));
 
   const today = dateKey(new Date());
-  const todays = useMemo(() => filterOrders(Object.values(orders), { range: { from: today, to: today } }), [orders, today]);
-  const eventOrders = useMemo(() => (event ? filterOrders(Object.values(orders), { eventId: event.id }) : []), [orders, event]);
+  const todays = useMemo(() => filterOrders(Object.values(orders), { range: { from: today, to: today }, sales: true }), [orders, today]);
+  const eventOrders = useMemo(() => (event ? filterOrders(Object.values(orders), { eventId: event.id, sales: true }) : []), [orders, event]);
   const s = summarize(todays);
   const peso = (cents: number) => (shown ? formatPeso(cents) : HIDDEN);
   const best = bestSellers(todays, 5);

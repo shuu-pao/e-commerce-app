@@ -130,8 +130,8 @@ event so it downloads everything.
 ## How it fits together
 
 ```
-src/app/        screens (Expo Router): sell, checkout, orders, home, reports, products, categories, events
-src/domain/     pure logic with tests: money, totals, discounts, payments, stock, reports, CSV
+src/app/        screens (Expo Router): sell, checkout, orders, document (invoice, receipt), home, reports, products, categories, events, shop (Shop details)
+src/domain/     pure logic with tests: money, totals, discounts, payments, stock, reports, CSV, invoices
 src/data/       store.ts (records + outbox, saved on the device), sync.ts (Supabase), catalog.ts (public catalog), storage.*.ts
 src/ui/         shared components and the design tokens from the mock
 scripts/        icons.py: rebuilds the 3 KB icon font (add an Ionicons name, run it)
@@ -147,6 +147,10 @@ public/         index.html (service worker registration), manifest, icons
   offline iPad and edits on the computer add up correctly after syncing.
 - **Order numbers** continue from the highest known number. If two offline devices pick the
   same number, the server gives the later upload the next free number.
+- **Invoices and receipts** are drawn in the browser from the order and the Shop details
+  (`src/domain/documents.ts` decides the content, `src/lib/documents.web.ts` draws it) and
+  saved as a PNG or a one-page PDF (`src/lib/pdf.ts`), offline. An invoiced order can wait
+  "Not paid yet": it holds its pieces but isn't a sale until Mark as paid.
 - **Photos** are cropped square and shrunk to 600 px on the device, so they work offline
   with no storage bucket. A product's first photo and each colour's first stay inside the
   product record; the others are records of their own (`photos`), so saving a product

@@ -27,6 +27,19 @@ export async function pickSquarePhotos(limit: number): Promise<string[]> {
   return photos;
 }
 
+/**
+ * Lets the seller pick one picture, kept whole (not cropped) and shrunk to fit `maxSide`, as a JPEG
+ * data URL; null if they cancelled. For the payment QR code, which must stay scannable.
+ */
+export async function pickWholePhoto(maxSide = 900): Promise<string | null> {
+  const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'images', quality: 1 });
+  const asset = result.canceled ? undefined : result.assets?.[0];
+  if (!asset) return null;
+  const image = await ImageManipulator.manipulate(asset.uri, { maxWidth: maxSide, maxHeight: maxSide }).renderAsync();
+  const saved = await image.saveAsync({ format: SaveFormat.JPEG, compress: 0.9, base64: true });
+  return saved.base64 ? `data:image/jpeg;base64,${saved.base64}` : null;
+}
+
 /** A smaller copy of a saved square photo, as base64 JPEG (never upscaled). */
 export async function shrinkPhoto(dataUrl: string, size: number): Promise<string | null> {
   const loaded = await ImageManipulator.manipulate(dataUrl).renderAsync();

@@ -1,3 +1,4 @@
+import { addDays, daysBetween, formatDate, isoToDateKey } from './dates.ts';
 import { formatPeso } from './money.ts';
 import type { Cents, Discount, Order, OrderLine, Payment } from './types.ts';
 
@@ -58,13 +59,14 @@ export function change(cashReceived: Cents | null, payments: Payment[]): Cents |
 }
 
 /** What still blocks placing the order, in plain words; empty when it can be placed. */
-export function checkoutProblems(order: Pick<Order, 'lines' | 'discount' | 'deliveryFee' | 'payments' | 'cashReceived'>): string[] {
+export function checkoutProblems(order: Pick<Order, 'lines' | 'discount' | 'deliveryFee' | 'payments' | 'cashReceived' | 'notPaid'>): string[] {
   const problems: string[] = [];
   const { total } = totals(order);
   if (order.lines.length === 0) problems.push('The cart is empty.');
   if (order.discount.kind === 'percent' && (order.discount.percent < 0 || order.discount.percent > 100)) {
     problems.push('A percent discount must be between 0 and 100.');
   }
+  if (order.notPaid) return problems; // paid later, with Mark as paid
   const sum = paid(order.payments);
   if (sum < total) problems.push(`Payments are ${formatPeso(total - sum)} short of the total.`);
   if (sum > total) problems.push(`Payments are ${formatPeso(sum - total)} over the total.`);
@@ -89,4 +91,39 @@ export function nextOrderNumber(orders: Iterable<Order>): number {
 
 export function formatOrderNumber(n: number): string {
   return '#' + String(n).padStart(4, '0');
+}
+
+// ---- Not paid yet (invoices) ------------------------------------------------
+
+/** Pay by the day after the invoice (client, round 6). */
+export const PAY_BY_DAYS = 1;
+
+/** When the money came in: when it was marked paid, or when it was placed. */
+export function paidAt(order: Pick<Order, 'paidAt' | 'createdAt'>): string {
+  return order.paidAt ?? order.createdAt;
+}
+
+/** The invoice's pay-by day (YYYY-MM-DD). */
+export function payByKey(order: Pick<Order, 'createdAt'>): string {
+  return addDays(isoToDateKey(order.createdAt), PAY_BY_DAYS);
+}
+
+/** Days past the pay-by day; 0 up to and on it. */
+export function daysOverdue(order: Pick<Order, 'createdAt'>, today: string): number {
+  return Math.max(0, daysBetween(payByKey(order), today));
+}
+
+/** "2 days overdue", "Due today" or "Pay by 23 Nov 2026", for a not-paid order. */
+export function unpaidNote(order: Pick<Order, 'createdAt'>, today: string): string {
+  const late = daysOverdue(order, today);
+  if (late > 0) return `${late} ${late === 1 ? 'day' : 'days'} overdue`;
+  const due = payByKey(order);
+  return due === today ? 'Due today' : `Pay by ${formatDate(due)}`;
+}
+
+/** Not-paid orders, the longest overdue first (then by order number). */
+export function unpaidFirst(orders: Iterable<Order>): Order[] {
+  const out: Order[] = [];
+  for (const o of orders) if (!o.deleted && o.notPaid) out.push(o);
+  return out.sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.number - b.number);
 }

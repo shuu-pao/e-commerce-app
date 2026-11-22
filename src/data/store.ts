@@ -6,8 +6,8 @@ import { randomUUID } from 'expo-crypto';
 import { nextOrderNumber, stillEditable } from '@/domain/checkout';
 import { mergeRemote, nextStamp, type Tables } from '@/domain/merge';
 import { planPhotos, type PhotoItem } from '@/domain/photos';
-import type { CollectionName, Collections, Id, Order, OrderLine, Product, ShopEvent, StockAdjustment } from '@/domain/types';
-import { COLLECTIONS, ONLINE_EVENT_ID } from '@/domain/types';
+import type { CollectionName, Collections, Id, Order, OrderLine, Product, ShopDetails, ShopEvent, StockAdjustment } from '@/domain/types';
+import { COLLECTIONS, ONLINE_EVENT_ID, SHOP_ID } from '@/domain/types';
 
 import * as storage from './storage';
 import { supabase } from './supabase';
@@ -34,6 +34,8 @@ export interface Settings {
   publishedPhotos?: string[];
   /** Downloaded every photo record once (sync.ts: versions before them skipped those rows). */
   photosPulled?: boolean;
+  /** Downloaded the shop details record once (same reason: versions before it skipped it). */
+  shopPulled?: boolean;
 }
 
 export interface SyncStatus {
@@ -55,7 +57,7 @@ export interface AppState {
   saveError: string | null;
 }
 
-const emptyDb = (): Db => ({ products: {}, categories: {}, events: {}, orders: {}, stock: {}, photos: {} });
+const emptyDb = (): Db => ({ products: {}, categories: {}, events: {}, orders: {}, stock: {}, photos: {}, shop: {} });
 const emptyCart = (): Cart => ({ lines: [], editingOrderId: null });
 
 let state: AppState = {
@@ -283,14 +285,38 @@ export type OrderDraft = Omit<Order, 'id' | 'updatedAt' | 'number' | 'createdAt'
  */
 export function placeOrder(draft: OrderDraft): Order {
   const editing = stillEditable(state.cart.editingOrderId ? state.db.orders[state.cart.editingOrderId] : undefined);
+  const now = new Date().toISOString();
   const [order] = save('orders', {
-    ...draft,
+    ...withPaidAt(draft, editing, now),
     id: editing?.id ?? newId(),
     number: editing?.number ?? nextOrderNumber(Object.values(state.db.orders)),
-    createdAt: editing?.createdAt ?? new Date().toISOString(),
+    createdAt: editing?.createdAt ?? now,
   });
   cartClear();
   return order;
+}
+
+/**
+ * When an order was paid: a not-paid order paid now (Mark as paid) gets today; one already paid
+ * keeps its day; a new order paid at checkout needs none (paid when placed).
+ */
+function withPaidAt(draft: OrderDraft, before: Order | undefined, now: string): OrderDraft {
+  const { paidAt, ...rest } = draft;
+  void paidAt;
+  if (draft.notPaid) return { ...rest, notPaid: true };
+  if (before?.notPaid) return { ...rest, notPaid: false, paidAt: now };
+  return before?.paidAt ? { ...rest, notPaid: false, paidAt: before.paidAt } : { ...rest, notPaid: false };
+}
+
+/** Ticks "Make an invoice" on an order already placed (Order summary). */
+export function makeInvoice(order: Order, buyer: { name: string; address: string }) {
+  save('orders', { ...order, invoice: true, buyer });
+}
+
+// ---- Shop details -----------------------------------------------------------------
+
+export function saveShop(details: Omit<ShopDetails, 'id' | 'updatedAt'>): ShopDetails {
+  return save('shop', { ...details, id: SHOP_ID })[0];
 }
 
 export function adjustStock(productId: Id, variantId: Id, delta: number) {

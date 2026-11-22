@@ -101,6 +101,38 @@ export interface Order extends BaseRecord {
   /** Cash the buyer handed over, to work out the change. */
   cashReceived: Cents | null;
   buyer: Buyer | null;
+  /** The "Make an invoice" box: the buyer gets an Invoice and a Payment receipt (src/domain/documents.ts). */
+  invoice?: boolean;
+  /**
+   * An invoiced order waiting for payment: no payments yet, its pieces are held for the buyer,
+   * and it isn't a sale (Home, Reports) until it's marked paid.
+   */
+  notPaid?: boolean;
+  /** When it was marked paid. Orders paid at checkout leave it out: they were paid when placed. */
+  paidAt?: string;
+}
+
+/** A bank or e-wallet account the invoice asks the buyer to pay into. */
+export interface PayAccount {
+  id: Id;
+  /** GCash, BPI, … */
+  bank: string;
+  accountName: string;
+  number: string;
+}
+
+/**
+ * The shop's own details for invoices and receipts: one record (SHOP_ID), synced like the rest.
+ * Kept in the data, not the code, because the repository is public.
+ */
+export interface ShopDetails extends BaseRecord {
+  shopName: string;
+  ownerName: string;
+  phone: string;
+  address: string;
+  accounts: PayAccount[];
+  /** The payment QR code as a JPEG data URL, or null. */
+  qrPhoto: string | null;
 }
 
 export interface Collections {
@@ -110,11 +142,15 @@ export interface Collections {
   orders: Order;
   stock: StockAdjustment;
   photos: ProductPhoto;
+  shop: ShopDetails;
 }
 
 export type CollectionName = keyof Collections;
 
-export const COLLECTIONS: CollectionName[] = ['products', 'categories', 'events', 'orders', 'stock', 'photos'];
+export const COLLECTIONS: CollectionName[] = ['products', 'categories', 'events', 'orders', 'stock', 'photos', 'shop'];
+
+/** The one ShopDetails record. */
+export const SHOP_ID = '00000000-0000-4000-8000-000000000002';
 
 /** The permanent event that holds online (Instagram) orders. */
 export const ONLINE_EVENT_ID = '00000000-0000-4000-8000-000000000001';

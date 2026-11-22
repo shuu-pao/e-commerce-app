@@ -112,13 +112,13 @@ test('csv: Excel-ready with quoting', () => {
   const csv = ordersToCsv([order({ buyer: { name: 'Ana "AJ" Reyes', address: 'Lahug, Cebu' } })], () => 'Online');
   assert.ok(csv.startsWith('﻿Order,Date,'));
   assert.match(csv, /#0001,2026-10-18,/);
-  assert.match(csv, /"Ana ""AJ"" Reyes","Lahug, Cebu"\r\n$/);
+  assert.match(csv, /"Ana ""AJ"" Reyes","Lahug, Cebu",Paid\r\n$/);
   assert.match(csv, /2 × Daisy claw clip \(Yellow\)/);
 });
 
 test('merge: newer wins, own uploads coming back clear the outbox, newer local edits stay', () => {
   const t = (iso: string, extra = {}) => ({ id: 'x', updatedAt: iso, ...extra });
-  const tables = { products: { x: t('2026-10-22T10:00:00.000Z', { name: 'local' }) }, categories: {}, events: {}, orders: {}, stock: {}, photos: {} };
+  const tables = { products: { x: t('2026-10-22T10:00:00.000Z', { name: 'local' }) }, categories: {}, events: {}, orders: {}, stock: {}, photos: {}, shop: {} };
   const outbox = { 'products/x': true as const };
 
   // Server copy is older: keep ours, keep it queued.

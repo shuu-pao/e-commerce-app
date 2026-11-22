@@ -32,7 +32,8 @@ new session won't know it, so record it here in the same turn.
   don't survive between sessions) and edit those.
 - **Question 3 is settled** (2026-10-19): no store apps. The app ships as
   an installable web app (below).
-- **Client questions page**: https://claude.ai/artifact/KZDZKxex8tdKWM3fiV1mTb.
+- **Client questions page**: https://claude.ai/artifact/KZDZKxex8tdKWM3fiV1mTb
+  (round 6, invoices and receipts, since 2026-11-22; Open questions).
   Round 1 (26 questions) was answered on 2026-10-20. Round 2 (2026-10-22)
   holds only the 9 still open (Open questions), numbered 1 to 9 on the
   page. Answers stay in the
@@ -87,6 +88,14 @@ new session won't know it, so record it here in the same turn.
   Tested: `npm test` (the save plan), `npm run test:db` (the migration,
   including the upgrade of a table made by the old file), the editor in
   WebKit and Chromium (device-only), and sync against a stubbed server.
+
+- **Invoices and receipts built (2026-11-22), not deployed yet.** Rounds 6
+  and 7 as decided (Decisions, Build notes "Invoices"). **To deploy: re-run
+  the migration in Supabase first** (it allows the new `shop` records), then
+  `npm run build:web` and deploy. In the other order, orders still sync
+  but saving Shop details shows a sync error until the migration runs.
+  After deploying: the client fills in Shop details (her name, phone,
+  address, GCash and BPI accounts, QR code picture).
 
 ## Build notes (version 1, 2026-10-22)
 
@@ -222,6 +231,32 @@ new session needs to know beyond that:
   the maskable safe circle). The browser tab icon stays the placeholder
   "c" (`assets/images/favicon.png`) and buttons stay berry, per the client.
   Proposal page: https://claude.ai/artifact/FMhZmyUuQEQSUkzde9PhzY.
+- **Invoices** (2026-11-22, rounds 6 and 7). An order has `invoice`
+  (the Checkout box, or "Make an invoice for this buyer" on Order
+  summary), `notPaid` and `paidAt` (set by Mark as paid; orders paid at
+  checkout leave it out). A not-paid order has no payments and holds its
+  pieces (stock and `catalog()` count every non-deleted order, unchanged).
+  Home, Reports and Events use `filterOrders(..., { sales: true })`: not-paid
+  orders left out, dates by the day paid. All orders lists not-paid orders
+  on top whatever the dates, with "Pay by", "Due today" or "N days
+  overdue" (pay by = the order's day + 1). Mark as paid opens the order in
+  Checkout with "Paid now" picked (`/checkout?pay=1`), so split payments
+  and change work as usual. Cancel order on a not-paid order is the
+  ordinary delete. Shop details are one synced record (collection `shop`,
+  `SHOP_ID`), never in the code; they upload last in a request of their
+  own, and each device downloads the collection once (`settings.shopPulled`,
+  as with photos). The words and numbers of each document come from
+  `src/domain/documents.ts` (tested); `src/lib/documents.web.ts` draws them
+  on a canvas (1240 px wide, A4 at 150 dpi) and makes the PNG and a
+  one-page PDF holding the JPEG of it (`src/lib/pdf.ts`, written by hand, no
+  library), all offline. On a touch device the files go to the share sheet
+  (Save Image, Files, Instagram); elsewhere they download. The document
+  is drawn before the tap because Safari only shares right after one.
+  Tested: `npm test`, `npm run test:db`, and in Brave (device-only) at iPad
+  landscape and phone sizes: invoice with QR, unpaid order, overdue with a
+  clock 3 days ahead, Mark as paid with cash + GCash and change, receipt,
+  Cancel order putting the stock back, invoice made after placing. **Not
+  tested**: WebKit and the iPad share sheet.
 - **Bugs from the code read** (fixed 2026-11-19, Decisions): a deleted
   order no longer comes back when its edit is saved (`stillEditable`,
   `src/domain/checkout.ts`); Edit product no longer undoes a sale that
@@ -323,7 +358,33 @@ New client questions get batched here and asked all at once; never
 trickle them out one reply at a time. The client answered round 5 on
 2026-11-06 (Decisions below).
 
-Waiting for the next round:
+Round 7 (2026-11-22, sample receipts) was answered the same day
+(Decisions). No questions are open. The page still shows the round 7
+samples (title fixed to sit right of the logo, as she asked).
+
+Round 6 (2026-11-22, invoices and receipts) was answered the same day
+(Decisions). The client asked for a downloadable document
+to send buyers (developer's message, 2026-11-22): date; billed to (name
+and address); invoice number = order number; a table of description,
+unit price, quantity, total, then delivery fee and total; payment
+details (account name, bank, account number); her details at the
+bottom (shop name, her name, phone number and address: in the
+developer's message, and kept out of this file because the repo is
+public; she types them into Shop details). Her note: a sales invoice can be made before
+payment; a payment or acknowledgment receipt is after. The page shows
+drafts of both and asks: 1 which orders; 2 not-paid orders (the app has
+no unpaid state today: do they hold stock, do they count in sales);
+3 the two titles ("Sales invoice" is the BIR's name for its official
+invoice under the EOPT Act, and she gives no BIR receipts, question 34);
+4 which payment accounts; 5 show the discount; 6 pay-by date; 7 extra
+receipt lines; 8 picture or PDF (Instagram chats take pictures); 9 other
+changes; 10 the hairclip styles question below.
+Developer-level plan (not asked): her shop details and account numbers
+go in a "Shop details" screen stored in the synced data, not in the
+code, because the repo is public.
+
+Answered (round 6 question 10, 2026-11-22): keep them as one product.
+The question was:
 1. (2026-11-18) Her "250 - hairclip" has 18 colours whose names repeat a
    style ("White - barrette la france", "Black - vintage glitter", "Pink -
    candy glitter"). Would she rather have each style as its own product
@@ -627,4 +688,11 @@ and the desktop it's a sidebar that stays open.
 | 2026-11-06 | Photos: up to 6 per product (the first is the cover, "Make cover" reorders) and up to 3 per colour. Cashier screens and receipts keep one photo, the colour's first (client, round 5 question 2) |
 | 2026-11-06 | Catalog product: opens on the product's photos (big photo plus small ones); tapping a colour shows only that colour's photos, tapping it again goes back (client, round 5 question 3) |
 | 2026-11-19 | An order deleted while it was open for editing stays deleted: the cart and Checkout say so, and the cart is placed as a new order (new number, today's date) instead of saving over it (developer) |
+| 2026-11-22 | Invoices and receipts (round 6): only for orders where a "Make an invoice" box is ticked, at an event or online; the order then needs the buyer's name (developer default: address optional for event buyers). Invoice title "Invoice", number = order number, pay-by date 1 day after, a discount line when there is one, payment details for all her accounts (GCash, BPI) plus her QR code picture; she liked the draft as is. Receipt shows each payment method and amount, a PAID stamp, cash received and change for cash, and a signature line (no balance line). Both download as a picture and as a PDF (client) |
+| 2026-11-22 | An order can be saved "Not paid yet" (for the invoice); its pieces are held (stock goes down at once) and it counts in Home and Reports only once paid (client, round 6 question 2; she asked which we'd suggest, round 7 confirms) |
+| 2026-11-22 | Round 7 confirmed: the receipt is called "Payment receipt"; not-paid orders hold their pieces; the Checkout flow as shown (a "Make an invoice for this buyer" box with buyer name, address optional at events, "Not paid yet" or "Paid now"; the box can be ticked later; Invoice and Receipt buttons with Save as picture and Save as PDF; Mark as paid; Cancel order on a not-paid order puts the pieces back). The samples look right; the document title sits right-aligned beside the logo, never under it (client) |
+| 2026-11-22 | All orders lists not-paid orders on top and shows how many days overdue each late one is (past its pay-by date) (client, round 7) |
+| 2026-11-22 | A not-paid order counts in Home and Reports on the day it's marked paid (developer default) |
+| 2026-11-22 | The hairclip styles stay one product with 18 colours (client, round 6 question 10) |
+| 2026-11-22 | Her shop details, account numbers and QR picture go in a "Shop details" screen in the synced data, never in the code (the repo is public) (developer default) |
 | 2026-11-19 | Edit product saves only the stock change typed over what the form showed when it opened; a colour left alone gets no change, so a sale that syncs in meanwhile still counts (developer) |

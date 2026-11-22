@@ -44,6 +44,18 @@ export function isoToDateKey(iso: string): string {
   return dateKey(new Date(iso));
 }
 
+/** Whole calendar days from one day to another (negative when `to` comes first). */
+export function daysBetween(from: string, to: string): number {
+  return Math.round((keyToDate(to).getTime() - keyToDate(from).getTime()) / 86_400_000);
+}
+
+const longDayFmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+/** 22 November 2026, for invoices and receipts. */
+export function formatLongDate(key: string): string {
+  return longDayFmt.format(keyToDate(key));
+}
+
 const dayFmt = new Intl.DateTimeFormat('en-PH', { weekday: 'short', day: 'numeric', month: 'short' });
 const fullDayFmt = new Intl.DateTimeFormat('en-PH', { day: 'numeric', month: 'short', year: 'numeric' });
 const timeFmt = new Intl.DateTimeFormat('en-PH', { hour: 'numeric', minute: '2-digit' });

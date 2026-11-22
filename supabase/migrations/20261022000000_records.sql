@@ -2,7 +2,7 @@
 -- Safe to run again after changes: everything below replaces what's there.
 --
 -- Every synced record (products, categories, events, orders, stock changes, extra product
--- photos) is one row of JSON.
+-- photos, the shop details for invoices) is one row of JSON.
 -- The app keeps its own copy on each device and works offline; this table is where the
 -- iPad and the computer meet. The newer change wins.
 
@@ -35,7 +35,7 @@ create index if not exists records_synced_at on public.records (synced_at, id);
 -- Replaced on every run, so a new kind of record only needs its name added here.
 alter table public.records drop constraint if exists records_collection_check;
 alter table public.records add constraint records_collection_check
-  check (collection in ('products', 'categories', 'events', 'orders', 'stock', 'photos'));
+  check (collection in ('products', 'categories', 'events', 'orders', 'stock', 'photos', 'shop'));
 
 alter table public.records enable row level security;
 drop policy if exists "shop owner reads" on public.records;

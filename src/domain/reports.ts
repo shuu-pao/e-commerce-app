@@ -1,4 +1,4 @@
-import { totals } from './checkout.ts';
+import { paidAt, totals } from './checkout.ts';
 import { addDays, addMonths, isoToDateKey, monthEnd, monthStart, weekStart } from './dates.ts';
 import type { Cents, Id, Order, PaymentMethod } from './types.ts';
 import { PAYMENT_METHODS } from './types.ts';
@@ -30,20 +30,26 @@ export function shiftPeriod(period: Period, anchor: string, dir: 1 | -1): string
 export interface OrderFilter {
   range?: Range;
   eventId?: Id | null;
+  /**
+   * Sales only (Home, Reports, Events): orders not paid yet are left out, and the range and the
+   * sort go by the day each was paid. Without it (All orders), by the day it was placed.
+   */
+  sales?: boolean;
 }
 
 export function filterOrders(orders: Iterable<Order>, filter: OrderFilter): Order[] {
   const out: Order[] = [];
+  const when = filter.sales ? paidAt : (o: Order) => o.createdAt;
   for (const o of orders) {
-    if (o.deleted) continue;
+    if (o.deleted || (filter.sales && o.notPaid)) continue;
     if (filter.eventId !== undefined && o.eventId !== filter.eventId) continue;
     if (filter.range) {
-      const day = isoToDateKey(o.createdAt);
+      const day = isoToDateKey(when(o));
       if (day < filter.range.from || day > filter.range.to) continue;
     }
     out.push(o);
   }
-  return out.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return out.sort((a, b) => when(b).localeCompare(when(a)));
 }
 
 export interface Summary {
@@ -73,10 +79,11 @@ export interface DayRow {
   sales: Cents;
 }
 
+/** Sales per day paid; pass orders from filterOrders with sales: true. */
 export function byDay(orders: Order[]): DayRow[] {
   const rows = new Map<string, DayRow>();
   for (const o of orders) {
-    const day = isoToDateKey(o.createdAt);
+    const day = isoToDateKey(paidAt(o));
     const row = rows.get(day) ?? { day, orders: 0, pieces: 0, sales: 0 };
     const t = totals(o);
     row.orders += 1;

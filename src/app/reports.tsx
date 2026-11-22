@@ -56,7 +56,7 @@ export default function Reports() {
   const from = activeRange?.from;
   const to = activeRange?.to;
   const shown = useMemo(
-    () => filterOrders(Object.values(orders), view === 'event' ? { eventId: eventFilter } : { range: from && to ? { from, to } : undefined }),
+    () => filterOrders(Object.values(orders), view === 'event' ? { eventId: eventFilter, sales: true } : { range: from && to ? { from, to } : undefined, sales: true }),
     [orders, view, eventFilter, from, to],
   );
   const s = summarize(shown);

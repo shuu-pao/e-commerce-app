@@ -1,7 +1,9 @@
 import { useMemo, useSyncExternalStore } from 'react';
 
 import { stockByVariant } from '@/domain/stock';
-import type { CollectionName, Collections, Id } from '@/domain/types';
+import { emptyShop } from '@/domain/documents';
+import type { CollectionName, Collections, Id, ShopDetails } from '@/domain/types';
+import { SHOP_ID } from '@/domain/types';
 
 import type { AppState } from './store';
 import { getState, subscribe } from './store';
@@ -35,4 +37,10 @@ export function useStockLeft(forSelling = false): Map<Id, number> {
 export function useEventName(): (id: Id | null) => string {
   const events = useAppState((s) => s.db.events);
   return useMemo(() => (id: Id | null) => (id ? (events[id]?.name ?? 'Unknown event') : 'No event'), [events]);
+}
+
+/** The shop's details for invoices and receipts (empty until the owner fills them in). */
+export function useShop(): ShopDetails {
+  const record = useAppState((s) => s.db.shop[SHOP_ID]);
+  return useMemo(() => record ?? emptyShop(), [record]);
 }

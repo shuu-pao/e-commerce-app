@@ -132,6 +132,8 @@ function AppDrawer() {
       <Drawer.Screen name="products/[id]" options={{ title: 'Product' }} />
       <Drawer.Screen name="categories" options={{ title: 'Categories' }} />
       <Drawer.Screen name="events" options={{ title: 'Events' }} />
+      <Drawer.Screen name="shop" options={{ title: 'Shop details' }} />
+      <Drawer.Screen name="document" options={{ title: 'Invoice' }} />
     </Drawer>
   );
 }

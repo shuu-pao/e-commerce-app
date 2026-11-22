@@ -141,4 +141,19 @@ const daisy2 = (await db.query('select public.catalog() as c')).rows[0].c.produc
 assert.deepEqual(daisy2.photos, [photo, 'data:image/jpeg;base64,FIRST', 'data:image/jpeg;base64,SECOND'].map(hash));
 assert.deepEqual(daisy2.variants.map((v) => v.photos), [[], [hash('data:image/jpeg;base64,WHITE')], []]);
 
+// 12. The shop details (invoices and receipts) sync as their own record; visitors never see them.
+// A not-paid order holds its pieces in the catalog's stock like any other order.
+const SHOP = '00000000-0000-4000-8000-000000000002';
+await push(OWNER, [
+  rec('shop', SHOP, { shopName: 'caracebu', ownerName: 'Owner', phone: '0917', address: 'Cebu', accounts: [], qrPhoto: null }),
+  rec('orders', 'eeeeeeee-0000-4000-8000-000000000022', { number: 51, notPaid: true, invoice: true, payments: [], lines: [{ variantId: 'v-yellow', qty: 6 }] }),
+]);
+assert.equal((await as(OWNER, `select data->>'phone' as p from records where collection = 'shop'`)).rows[0].p, '0917');
+await assert.rejects(push(OWNER, [rec('secrets', SHOP, {})]), /records_collection_check/, 'unknown kinds of record are refused');
+await db.exec('set role anon;');
+const cat3 = (await db.query('select public.catalog() as c')).rows[0].c;
+await db.exec('reset role;');
+assert.ok(!JSON.stringify(cat3).includes('0917'), 'shop details stay private');
+assert.equal(cat3.products[0].variants[0].stock, 'out', 'yellow: 8 - 2 sold - 6 held = sold out');
+
 console.log('SQL migration: all checks passed');

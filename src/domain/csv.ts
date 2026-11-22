@@ -14,7 +14,7 @@ const pesos = (cents: number) => (cents / 100).toFixed(2);
 
 /** Orders as CSV that Excel opens directly (UTF-8 with a byte-order mark). */
 export function ordersToCsv(orders: Order[], eventName: (id: Id | null) => string): string {
-  const header = ['Order', 'Date', 'Time', 'Event', 'Items', 'Pieces', 'Subtotal', 'Discount', 'Delivery fee', 'Total', 'Payment', 'Buyer', 'Address'];
+  const header = ['Order', 'Date', 'Time', 'Event', 'Items', 'Pieces', 'Subtotal', 'Discount', 'Delivery fee', 'Total', 'Payment', 'Buyer', 'Address', 'Status'];
   const rows = orders.map((o) => {
     const t = totals(o);
     return [
@@ -31,6 +31,7 @@ export function ordersToCsv(orders: Order[], eventName: (id: Id | null) => strin
       o.payments.map((p) => `${paymentLabel(p.method)} ${pesos(p.amount)}`).join('; '),
       o.buyer?.name ?? '',
       o.buyer?.address ?? '',
+      o.notPaid ? 'Not paid' : 'Paid',
     ];
   });
   return '﻿' + [header, ...rows].map((r) => r.map(cell).join(',')).join('\r\n') + '\r\n';

@@ -81,7 +81,7 @@ export default function Events() {
 
       <Card style={styles.list}>
         {sorted.map((e) => {
-          const s = summarize(filterOrders(Object.values(orders), { eventId: e.id }));
+          const s = summarize(filterOrders(Object.values(orders), { eventId: e.id, sales: true }));
           const isCurrent = e.id === currentId;
           const fixed = e.id === ONLINE_EVENT_ID;
           if (renaming?.id === e.id) {

@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import { useMemo, useState, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -10,6 +10,7 @@ import { ONLINE_EVENT_ID, PAYMENT_METHODS } from '@/domain/types';
 import { useAppState, useLive } from '@/data/hooks';
 import { placeOrder } from '@/data/store';
 import { Button } from '@/ui/Button';
+import { Checkbox } from '@/ui/Checkbox';
 import { Choice } from '@/ui/Choice';
 import { DeletedOrderNote } from '@/ui/DeletedOrderNote';
 import { Field } from '@/ui/Field';
@@ -46,6 +47,8 @@ export default function Checkout() {
 }
 
 function CheckoutForm() {
+  // Mark as paid (Order summary) opens a not-paid order here with "Paid now" picked.
+  const { pay } = useLocalSearchParams<{ pay?: string }>();
   const cart = useAppState((s) => s.cart);
   // The order the cart was opened from fills in the form; it is only saved over while it still exists.
   const opened = useAppState((s) => (s.cart.editingOrderId ? s.db.orders[s.cart.editingOrderId] : undefined));
@@ -69,9 +72,14 @@ function CheckoutForm() {
       : [{ method: 'cash', text: '' }, { method: 'gcash', text: '' }],
   );
   const [cashText, setCashText] = useState(opened?.cashReceived ? centsToInput(opened.cashReceived) : '');
+  // "Make an invoice for this buyer" (client, round 6): only for the buyers who ask for one.
+  const [invoice, setInvoice] = useState(opened?.invoice ?? false);
+  const [notPaidChoice, setNotPaid] = useState(pay ? false : opened ? !!opened.notPaid : true);
   const [tried, setTried] = useState(false);
 
   const online = eventId === ONLINE_EVENT_ID;
+  const notPaid = invoice && notPaidChoice;
+  const needsBuyer = online || invoice;
 
   // ---- Turn what was typed into an order --------------------------------------
   const percent = discountKind === 'percent' ? Number(discountText) : NaN;
@@ -89,11 +97,13 @@ function CheckoutForm() {
   const t = totals({ lines: cart.lines, discount, deliveryFee: fee ?? 0 });
 
   const rowAmounts = rows.map((r) => (r.text ? parsePeso(r.text) : 0));
-  const payments = split
+  const payments = notPaid
+    ? []
+    : split
     ? rows.map((r, i) => ({ method: r.method, amount: rowAmounts[i] ?? 0 })).filter((p) => p.amount > 0)
     : [{ method, amount: t.total }];
   const left = t.total - payments.reduce((n, p) => n + p.amount, 0);
-  const takesCash = payments.some((p) => p.method === 'cash');
+  const takesCash = !notPaid && payments.some((p) => p.method === 'cash');
   const cashReceived = takesCash && cashText ? parsePeso(cashText) : null;
   const cashError = takesCash && cashText && cashReceived === null ? 'Type an amount, like 1000.' : null;
   const changeDue = change(cashReceived, payments);
@@ -105,13 +115,15 @@ function CheckoutForm() {
     deliveryFee: fee ?? 0,
     payments,
     cashReceived: takesCash ? cashReceived : null,
-    buyer: online ? { name: buyerName.trim(), address: address.trim() } : null,
+    buyer: needsBuyer ? { name: buyerName.trim(), address: address.trim() } : null,
+    invoice,
+    notPaid,
   };
   const problems = [
     ...checkoutProblems(draft),
     ...[percentError, amountError, feeError, cashError].filter((e): e is string => !!e),
-    ...(online && !buyerName.trim() ? ["Add the buyer's name for an online order."] : []),
-    ...(split && rowAmounts.some((a) => a === null) ? ['One of the payment amounts isn’t a number.'] : []),
+    ...(needsBuyer && !buyerName.trim() ? [invoice ? "Add the buyer's name for the invoice." : "Add the buyer's name for an online order."] : []),
+    ...(!notPaid && split && rowAmounts.some((a) => a === null) ? ['One of the payment amounts isn’t a number.'] : []),
   ];
 
   const place = () => {
@@ -152,11 +164,33 @@ function CheckoutForm() {
     <View style={[styles.panel, twoColumns && styles.panelSide]}>
       <Section title="Event">
         <Choice label="Event" options={[...eventOptions, { value: '', label: 'No event' }]} value={eventId ?? ''} onChange={(v) => setEventId(v || null)} />
-        {online ? (
+        <Checkbox
+          label="Make an invoice for this buyer"
+          hint={invoice ? 'You get an Invoice and a Payment receipt to save as a picture or PDF.' : undefined}
+          value={invoice}
+          onChange={setInvoice}
+        />
+        {needsBuyer ? (
           <View style={styles.group}>
-            <Field label="Buyer's name" value={buyerName} onChangeText={setBuyerName} autoCapitalize="words" error={tried && !buyerName.trim() ? 'Needed for online orders.' : null} />
-            <Field label="Address" value={address} onChangeText={setAddress} multiline placeholder="Street, barangay, city" />
-            <Field label="Delivery fee (₱)" numeric value={feeText} onChangeText={setFeeText} placeholder="0" error={feeError} />
+            <Field label="Buyer's name" value={buyerName} onChangeText={setBuyerName} autoCapitalize="words" error={tried && !buyerName.trim() ? (invoice ? 'Needed for the invoice.' : 'Needed for online orders.') : null} />
+            <Field label={online ? 'Address' : 'Address (you can leave it empty)'} value={address} onChangeText={setAddress} multiline placeholder="Street, barangay, city" />
+            {online ? <Field label="Delivery fee (₱)" numeric value={feeText} onChangeText={setFeeText} placeholder="0" error={feeError} /> : null}
+          </View>
+        ) : null}
+        {invoice ? (
+          <View style={styles.group}>
+            <Choice
+              label="Paid yet?"
+              columns={2}
+              options={[{ value: 'later', label: 'Not paid yet' }, { value: 'now', label: 'Paid now' }]}
+              value={notPaidChoice ? 'later' : 'now'}
+              onChange={(v) => setNotPaid(v === 'later')}
+            />
+            <Txt variant="small">
+              {notPaidChoice
+                ? 'The order is saved with its invoice and its pieces are held for the buyer. Tap Mark as paid on the order when they pay.'
+                : 'Pick how they paid below. The receipt is ready right away.'}
+            </Txt>
           </View>
         ) : null}
       </Section>
@@ -170,7 +204,7 @@ function CheckoutForm() {
         ) : null}
       </Section>
 
-      <Section title="Paid by">
+      {notPaid ? null : <Section title="Paid by">
         {split ? (
           <View style={styles.group}>
             {rows.map((r, i) => (
@@ -225,7 +259,7 @@ function CheckoutForm() {
             </View>
           </View>
         ) : null}
-      </Section>
+      </Section>}
 
       <View style={styles.totals}>
         <Row label="Subtotal" value={formatPeso(t.subtotal)} />
@@ -240,7 +274,13 @@ function CheckoutForm() {
       ) : null}
       {deletedMeanwhile && opened ? <DeletedOrderNote number={opened.number} /> : null}
       <Button
-        label={editing ? `Save order ${formatOrderNumber(editing.number)}` : deletedMeanwhile ? 'Place as a new order' : 'Place order'}
+        label={
+          editing && editing.notPaid && !notPaid ? `Mark ${formatOrderNumber(editing.number)} as paid`
+          : editing ? `Save order ${formatOrderNumber(editing.number)}`
+          : deletedMeanwhile ? 'Place as a new order'
+          : notPaid ? 'Place order, not paid yet'
+          : 'Place order'
+        }
         size="lg"
         onPress={place}
       />

@@ -61,9 +61,14 @@ function* batches(records: store.RemoteRecord[]) {
 async function push() {
   if (!supabase) return;
   const all = store.outboxRecords();
-  // Photos upload last, in requests of their own: if they fail (say the server's migration isn't
-  // re-run yet), orders and products still get through.
-  const groups = [all.filter((r) => r.collection !== 'photos'), all.filter((r) => r.collection === 'photos')];
+  // Photos, then the shop details, upload last, in requests of their own: if they fail (say the
+  // server's migration isn't re-run yet), orders and products still get through.
+  const late = (c: string) => c === 'photos' || c === 'shop';
+  const groups = [
+    all.filter((r) => !late(r.collection)),
+    all.filter((r) => r.collection === 'photos'),
+    all.filter((r) => r.collection === 'shop'),
+  ];
   for (const batch of groups.flatMap((group) => [...batches(group)])) {
     const rows = batch.map(({ collection, record }) => ({
       collection,
@@ -103,7 +108,7 @@ async function download(since: string, newest: string | null, collection?: Colle
 }
 
 async function pull() {
-  const { lastPulledAt: cursor, photosPulled } = store.getState().settings;
+  const { lastPulledAt: cursor, photosPulled, shopPulled } = store.getState().settings;
   // Re-read a few seconds back: a change committed just as we last read can carry an older time.
   const newest = await download(cursor ? new Date(Date.parse(cursor) - 5000).toISOString() : EPOCH, cursor);
   // An empty first download still counts as done (the epoch means "nothing newer seen yet").
@@ -113,6 +118,11 @@ async function pull() {
     // App versions before photo records skipped those rows but moved past them: fetch them all once.
     if (cursor) await download(EPOCH, null, 'photos');
     store.updateSettings({ photosPulled: true });
+  }
+  if (!shopPulled) {
+    // The same for the shop details (invoices, added 2026-11-22).
+    if (cursor) await download(EPOCH, null, 'shop');
+    store.updateSettings({ shopPulled: true });
   }
 }
 

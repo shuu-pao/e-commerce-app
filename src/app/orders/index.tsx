@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import { formatOrderNumber, totals } from '@/domain/checkout';
+import { daysOverdue, formatOrderNumber, totals, unpaidFirst, unpaidNote } from '@/domain/checkout';
 import { ordersToCsv } from '@/domain/csv';
 import { addDays, dateKey, formatDateTime } from '@/domain/dates';
 import { formatPeso } from '@/domain/money';
@@ -38,11 +38,18 @@ export default function Orders() {
   const { width } = useWindowDimensions();
   const table = (width >= WIDE ? width - 260 : width) >= 760;
 
-  const shown = useMemo(
-    () => filterOrders(Object.values(orders), { range: { from, to }, eventId: eventId === ALL_EVENTS ? undefined : eventId === NO_EVENT ? null : eventId }),
-    [orders, from, to, eventId],
-  );
-  const s = summarize(shown);
+  // Orders not paid yet stay on top whatever the dates, so none are forgotten (client, round 7).
+  const [unpaid, paid] = useMemo(() => {
+    const event = eventId === ALL_EVENTS ? undefined : eventId === NO_EVENT ? null : eventId;
+    const all = Object.values(orders);
+    return [
+      unpaidFirst(all).filter((o) => event === undefined || o.eventId === event),
+      filterOrders(all, { range: { from, to }, eventId: event }).filter((o) => !o.notPaid),
+    ];
+  }, [orders, from, to, eventId]);
+  const shown = useMemo(() => [...unpaid, ...paid], [unpaid, paid]);
+  const s = summarize(paid);
+  const owed = summarize(unpaid);
 
   const download = () => {
     const ok = downloadText(`caracebu-orders-${from}-to-${to}.csv`, ordersToCsv(shown, eventName));
@@ -71,7 +78,8 @@ export default function Orders() {
           <Choice label="Event" options={eventOptions} value={eventId} onChange={setEventId} />
           {notice ? <Txt color={colors.accent}>{notice}</Txt> : null}
           <Txt color={colors.body}>
-            {s.orders} {s.orders === 1 ? 'order' : 'orders'} · {s.pieces} {s.pieces === 1 ? 'piece' : 'pieces'} · <Txt weight="bold">{formatPeso(s.sales)}</Txt>
+            {s.orders} paid {s.orders === 1 ? 'order' : 'orders'} · {s.pieces} {s.pieces === 1 ? 'piece' : 'pieces'} · <Txt weight="bold">{formatPeso(s.sales)}</Txt>
+            {owed.orders ? <Txt color={colors.accent} weight="semibold">{`  ·  ${owed.orders} not paid yet (${formatPeso(owed.sales)})`}</Txt> : null}
           </Txt>
           {table && shown.length ? (
             <View style={[styles.row, styles.headRow]}>
@@ -86,14 +94,15 @@ export default function Orders() {
         </View>
       }
       ListEmptyComponent={firstDownload ? <RowsSkeleton /> : <Empty title="No orders" message="No orders match these dates and event." />}
-      renderItem={({ item }) => <OrderRow order={item} table={table} unsynced={syncEnabled && !!outbox[`orders/${item.id}`]} eventName={eventName(item.eventId)} />}
+      renderItem={({ item }) => <OrderRow order={item} table={table} today={today} unsynced={syncEnabled && !!outbox[`orders/${item.id}`]} eventName={eventName(item.eventId)} />}
     />
   );
 }
 
-function OrderRow({ order, table, unsynced, eventName }: { order: Order; table: boolean; unsynced: boolean; eventName: string }) {
+function OrderRow({ order, table, today, unsynced, eventName }: { order: Order; table: boolean; today: string; unsynced: boolean; eventName: string }) {
   const t = totals(order);
-  const pay = order.payments.map((p) => paymentLabel(p.method)).join(' + ');
+  const pay = order.notPaid ? 'Not paid' : order.payments.map((p) => paymentLabel(p.method)).join(' + ');
+  const late = order.notPaid && daysOverdue(order, today) > 0;
   const disc = t.discount ? (order.discount.kind === 'percent' ? `${order.discount.percent}%` : formatPeso(t.discount)) : '—';
   const open = () => router.push({ pathname: '/orders/[id]', params: { id: order.id } });
   const no = (
@@ -102,13 +111,19 @@ function OrderRow({ order, table, unsynced, eventName }: { order: Order; table: 
       {unsynced ? <Txt style={styles.pill}>Not synced</Txt> : null}
     </View>
   );
+  const due = order.notPaid ? (
+    <Txt weight="semibold" style={[styles.duePill, late && styles.latePill]}>{unpaidNote(order, today)}</Txt>
+  ) : null;
   if (table) {
     return (
       <Pressable accessibilityRole="link" accessibilityLabel={`Order ${formatOrderNumber(order.number)}, ${formatPeso(t.total)}`} onPress={open} style={({ hovered }) => [styles.row, hovered && styles.hover]}>
         {no}
-        <Txt color={colors.body} style={styles.cWhen}>{formatDateTime(order.createdAt)}</Txt>
+        <View style={[styles.cWhen, styles.whenCell]}>
+          <Txt color={colors.body}>{formatDateTime(order.createdAt)}</Txt>
+          {due}
+        </View>
         <Txt style={styles.cItems}>{t.pieces}</Txt>
-        <Txt style={styles.cPay} numberOfLines={1}>{pay}</Txt>
+        <Txt style={styles.cPay} numberOfLines={1} color={order.notPaid ? colors.accent : undefined} weight={order.notPaid ? 'semibold' : undefined}>{pay}</Txt>
         <Txt color={colors.body} style={styles.cDisc}>{disc}</Txt>
         <Txt weight="semibold" style={styles.cTotal}>{formatPeso(t.total)}</Txt>
       </Pressable>
@@ -120,6 +135,7 @@ function OrderRow({ order, table, unsynced, eventName }: { order: Order; table: 
         {no}
         <Txt weight="bold">{formatPeso(t.total)}</Txt>
       </View>
+      {due ? <View style={styles.dueRow}>{due}</View> : null}
       <Txt variant="small">{formatDateTime(order.createdAt)} · {eventName}</Txt>
       <Txt variant="small">{t.pieces} {t.pieces === 1 ? 'piece' : 'pieces'} · {pay}{t.discount ? ` · ${disc} off` : ''}</Txt>
     </Pressable>
@@ -142,6 +158,10 @@ const styles = StyleSheet.create({
   cPay: { width: 140 },
   cDisc: { width: 80, textAlign: 'right' },
   cTotal: { width: 100, textAlign: 'right', fontVariant: ['tabular-nums'] },
+  whenCell: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
+  dueRow: { flexDirection: 'row' },
+  duePill: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.pill, backgroundColor: colors.warnBg, color: colors.warnInk, fontSize: 12, lineHeight: 16, overflow: 'hidden' },
+  latePill: { backgroundColor: colors.accentSoft, color: colors.accent },
   pill: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.pill, backgroundColor: colors.warnBg, color: colors.warnInk, fontSize: 11, lineHeight: 15, overflow: 'hidden' },
   card: { gap: 4, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.line },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

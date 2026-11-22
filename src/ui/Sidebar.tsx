@@ -42,12 +42,13 @@ export function Sidebar({ navigation, permanent }: Props) {
         {sorted.map((c) => (
           <Item key={c.id} label={c.name} sub active={onSell && category === c.id} onPress={() => go({ pathname: '/sell', params: { category: c.id } })} />
         ))}
-        <Item label="All orders" active={pathname.startsWith('/orders')} onPress={() => go('/orders')} />
+        <Item label="All orders" active={pathname.startsWith('/orders') || pathname === '/document'} onPress={() => go('/orders')} />
         <Item label="Reports" active={pathname === '/reports'} onPress={() => go('/reports')} />
         <Txt variant="label" style={styles.section}>Manage</Txt>
         <Item label="Products" active={pathname.startsWith('/products')} onPress={() => go('/products')} />
         <Item label="Categories" active={pathname === '/categories'} onPress={() => go('/categories')} />
         <Item label="Events" active={pathname === '/events'} onPress={() => go('/events')} />
+        <Item label="Shop details" active={pathname === '/shop'} onPress={() => go('/shop')} />
       </ScrollView>
       <UpdateBanner />
       <SyncBox />
