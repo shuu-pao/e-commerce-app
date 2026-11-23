@@ -98,8 +98,8 @@ new session won't know it, so record it here in the same turn.
   and a receipt on her iPad (picture and PDF; WebKit and the share sheet
   are untested).
 
-- **Design review answered by the client and built (2026-11-23), not
-  deployed, not committed**: what she picked is under "Design review
+- **Design review answered by the client and built (2026-11-23), merged
+  into `main` and pushed, not deployed yet**: what she picked is under "Design review
   answers" below, how it was built under Build notes ("Design review
   build"). **To deploy: re-run the migration in Supabase first** (the
   catalog's "Low on stock" moves from 5 to 3 pieces in
