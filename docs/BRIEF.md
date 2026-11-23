@@ -98,10 +98,138 @@ new session won't know it, so record it here in the same turn.
   and a receipt on her iPad (picture and PDF; WebKit and the share sheet
   are untested).
 
+- **Design review answered by the client and built (2026-11-23), not
+  deployed, not committed**: what she picked is under "Design review
+  answers" below, how it was built under Build notes ("Design review
+  build"). **To deploy: re-run the migration in Supabase first** (the
+  catalog's "Low on stock" moves from 5 to 3 pieces in
+  `public.stock_status()`), then `npm run build:web` and deploy.
+- **Design review proposal (2026-11-22)**:
+  https://claude.ai/artifact/VQowzecVQs85knKURZcwPT. 15 before/after
+  proposals (checkout fits one screen, quick cash amounts, change first on
+  Order placed, cart badges on cards, compact cart lines, event picker on
+  Sell, photo-tile colour picker, slim menu while selling, "Keep …" and
+  red in confirm pop-ups, order page side panel, buyer column and search
+  in All orders, pinned Save in Edit product, stronger selected state,
+  catalog product page with a pinned Instagram bar, one-row catalog
+  chips), plus small fixes and naming tidy-ups for the client. The client
+  picks options on the page and sends them back as text. Screenshots came
+  from a device-only copy seeded with the public catalog's products and
+  photos (sample orders, "Sample Owner" shop details); catalog and sign-in
+  screens from the live site, visitor only. Version 2 (same day, the
+  developer asked for it): each "After" is the same screen at the same size
+  and with the same products as its "Before", with the change drawn into
+  the page in the browser (no code changed), instead of a hand-drawn mock.
+  Later the same day: close-up crops under each pair, numbered
+  comparison cards (P2, P11), Before/After switching in the enlarged
+  view, and an "Other: type your own answer" choice on every question.
+
+## Design review answers (client, 2026-11-23; built the same day)
+
+Numbers are the proposals on the review page. "As shown" means the
+review page's "After" picture is the spec.
+
+1. Checkout: option B. Keep today's two halves; the total and Place
+   order stay pinned to the bottom of the right side (the rest of the
+   right side scrolls above them).
+2. Cash: option A (quick amounts, big green change under the box, empty
+   boxes say "Type the amount", split rows say "Rest: ₱…"), and the
+   quick amounts follow Philippine money: coins ₱1, 5, 10, 20; bills
+   ₱20, 50, 100, 200, 500, 1,000. Her examples: total ₱399 suggests
+   ₱400, ₱500, ₱1,000; total ₱250 suggests ₱300, ₱500, ₱1,000.
+   Developer-level rule (not asked): Exact, then the next amounts a buyer
+   would hand over: the total rounded up to ₱100, ₱500, ₱1,000 and
+   ₱5,000, keeping the first three that are different and above the
+   total (₱2,548 gives ₱2,600, ₱3,000, ₱5,000), topped up with further
+   ₱1,000 steps if fewer than three are left (a ₱1,000 total gives
+   ₱5,000, ₱2,000, ₱3,000, sorted: ₱2,000, ₱3,000, ₱5,000).
+3. Order placed: option A, as shown (green box at the top: order number,
+   payment, big "Give change", New order).
+4. Sell cards: option A, as shown ("3 in order" badge and a berry
+   outline).
+5. Cart lines: option A, two rows per line, as shown.
+6. Event: option A, a small list opens from "Change" on Sell (events,
+   Online, No event, "+ New event", "Manage events").
+7. Colour picker: option A, photo tiles, as shown. She asked how to name
+   colours for it: keep "Colour - style" (e.g. "Pink - candy glitter");
+   the tile shows the part before the first " - " large and the rest
+   small under it. A name without " - " shows whole.
+8. Slim icon menu (option A: on Sell and Checkout; managing screens keep
+   the full menu), plus category chips at the top of Sell like the
+   catalog's, since the slim menu hides the category list.
+9. Pop-ups: option B, only the wording ("Keep order", "Keep product",
+   "Keep category"); colours stay as they are.
+10. Order page: her own: keep one column; one row with the status on the
+    left (Not paid yet, Pay by, to collect) and Mark as paid on the right;
+    everything else stays as it is below.
+11. All orders: option A (Buyer column, search by order number or buyer,
+    one row of small filters on the phone, an arrow on each row).
+12. Edit product: option A (pinned Save bar with "Changes not saved",
+    colour photos about twice as big with a round ×, a "Low" tag beside
+    the number), and "low stock" becomes 3 pieces or fewer instead of 5.
+13. Selected choices: option C, keep as is.
+14. Catalog product page on phones: option A (colours under the price,
+    description shortened with "Read more", pinned bar with the price and
+    Message us on Instagram).
+15. Catalog list on phones: option A (categories in one row that swipes,
+    a smaller Instagram button with its icon).
+
+Small fixes, all ticked: "1 pcs" reads "1 pc"; the Home event tile says
+"This event" on top with the event's name under the amount; Events'
+"SELLING AT NOW" reads "NOW SELLING AT"; Add product marks Title and
+Price as needed and scrolls to the first empty one on Save; Home's report
+shortcuts become a 7-day sales chart; icons beside the menu items; a thin
+frame on Edit product photo thumbnails.
+
+Not done: a number pad for Cash received on the iPad (the client asked,
+2026-11-23). The field already asks for one (`inputmode="decimal"`), which
+iPhones honour, but iPadOS has no number pad and shows the full keyboard
+on its numbers page; only an in-app keypad could do it, and the developer
+dropped the idea.
+
 ## Build notes (version 1, 2026-10-22)
 
 How the code is laid out is in README.md ("How it fits together"). What a
 new session needs to know beyond that:
+
+- **Design review build** (2026-11-23, the answers above). Checkout keeps
+  its layout; the right side scrolls above a pinned footer with the
+  Total, the change (green, once known; the cash box can be scrolled out
+  of view) and Place order. Quick cash amounts: `quickCash()` in
+  `src/domain/checkout.ts` (tested). Order placed: `PlacedBox` in
+  `src/app/orders/[id].tsx`; a not-paid order shows the status row with
+  Mark as paid above the receipt (also on its order page). Sell: "N in
+  order" badges, category chips, the event list
+  (`src/ui/EventPicker.tsx`, opened from Change), colour tiles (the part
+  of a colour name before the first " - " large). The slim menu
+  (`slimMenuOn()` in `src/ui/Sidebar.tsx`: Sell and Checkout, wide screens
+  only; the menu button opens the full menu over the page). Menu icons
+  needed new glyphs: `scripts/icons.py` lists them; this PC has no Python,
+  so `scripts/icons.mjs` builds the same font with the subset-font npm
+  package (installed in a scratch folder, not a dependency). All orders:
+  search by number or buyer (`matchesOrder()`, tested; a search looks
+  through every date), Buyer column, row arrows, and on a phone one row of
+  small filter buttons that open the dates or the events. Edit product:
+  pinned Save bar ("Changes not saved"), 80 px framed colour photos with a
+  round ×, "Low" and "Needed" tags (`Field`'s `tag`), Save jumps to the
+  first field to fix. `LOW_STOCK` = 3 in `src/domain/stock.ts` and the
+  migration. Catalog: one swipeable row of categories, a smaller
+  Instagram button (also in `public/index.html`'s early drawing), and on a
+  phone the colours under the price, "Read more" past 220 characters and
+  a pinned price + Message us on Instagram bar. Home: "This event" tile
+  with the name under the amount, "1 pc", and a 7-day sales chart
+  (`src/ui/DayBars.tsx`) instead of the report shortcuts. Confirm
+  pop-ups take a `cancelLabel` ("Keep order", "Keep product", …).
+  Tested: `npm test`, `npm run test:db`, typecheck, lint, `build:web`;
+  in Brave (device-only) at iPad landscape and phone sizes: Sell, colour
+  tiles, cart, event list, Checkout with quick amounts, Order placed,
+  a not-paid order, Cancel order dialog, All orders and its search, Home,
+  Edit product and Add product; the catalog at phone and computer sizes
+  against a pretend Supabase (a second dev server with
+  `EXPO_PUBLIC_SUPABASE_URL=https://stub.caracebu.test`, every request
+  answered by the test, the real project blocked). **Not tested**: WebKit
+  and a real iPad (the event list is placed with `measureInWindow`), and
+  `public/index.html`'s early catalog drawing in a production build.
 
 - **Web output is `single`** (one-page app) so the service worker can serve
   it offline; any host must send unknown paths to `/index.html`.
@@ -359,8 +487,17 @@ New client questions get batched here and asked all at once; never
 trickle them out one reply at a time. The client answered round 5 on
 2026-11-06 (Decisions below).
 
+For the developer to confirm (2026-11-23, design review answers; build
+uses these defaults until then):
+1. Low stock "3pcs below": read as 3 pieces or fewer, and applied
+   everywhere the 5 was used: the catalog's "Low on stock" (the
+   `catalog()` function in the migration, so re-run it before deploying)
+   and the new "Low" tag in Edit product.
+2. Proposal 8, "the slim menu on the left most": read as option A, slim
+   on Sell and Checkout only, full menu on the managing screens.
+
 Round 7 (2026-11-22, sample receipts) was answered the same day
-(Decisions). No questions are open. The page still shows the round 7
+(Decisions). No client questions are open. The page still shows the round 7
 samples (title fixed to sit right of the logo, as she asked).
 
 Round 6 (2026-11-22, invoices and receipts) was answered the same day
@@ -697,3 +834,8 @@ and the desktop it's a sidebar that stays open.
 | 2026-11-22 | The hairclip styles stay one product with 18 colours (client, round 6 question 10) |
 | 2026-11-22 | Her shop details, account numbers and QR picture go in a "Shop details" screen in the synced data, never in the code (the repo is public) (developer default) |
 | 2026-11-19 | Edit product saves only the stock change typed over what the form showed when it opened; a colour left alone gets no change, so a sale that syncs in meanwhile still counts (developer) |
+| 2026-11-23 | Design review: 12 proposals and all 7 small fixes accepted, proposal 13 kept as is; details and her own answers under "Design review answers" (client) |
+| 2026-11-23 | Quick cash amounts follow Philippine bills: Exact, then the total rounded up to ₱100, ₱500, ₱1,000, ₱5,000 (client asked for it; the exact rule is the developer's) |
+| 2026-11-23 | Low stock is 3 pieces or fewer instead of 5 (client; applies to the catalog too unless the developer says otherwise) |
+| 2026-11-23 | Colour names stay "Colour - style"; the colour tiles show the colour large and the style small (client asked, developer default) |
+| 2026-11-23 | No in-app number pad for Cash received: iPads have no system number pad, and the developer dropped it (developer) |

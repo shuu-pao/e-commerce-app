@@ -21,8 +21,11 @@ export function stockByVariant(
   return left;
 }
 
-/** The public catalog shows "Low on stock" at this many pieces or fewer (public.stock_status() in the migration). */
-export const LOW_STOCK = 5;
+/**
+ * "Low on stock" at this many pieces or fewer, in the catalog and in Edit product (client, design review 12;
+ * was 5). Keep public.stock_status() in the migration the same.
+ */
+export const LOW_STOCK = 3;
 
 /** The adjustment that takes a variant from what the app counts to what the seller counted. */
 export function deltaToReach(current: number, target: number): number {

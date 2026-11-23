@@ -3,14 +3,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { change, checkoutProblems, discountAmount, formatOrderNumber, nextOrderNumber, stillEditable, totals } from './checkout.ts';
+import { change, checkoutProblems, discountAmount, formatOrderNumber, nextOrderNumber, quickCash, stillEditable, totals } from './checkout.ts';
 import { ordersToCsv } from './csv.ts';
-import { addMonths, dateKey, isDateKey, monthEnd, weekStart } from './dates.ts';
+import { addMonths, dateKey, formatRange, isDateKey, monthEnd, weekStart } from './dates.ts';
 import { mergeRemote, nextStamp } from './merge.ts';
 import { photoList, planPhotos } from './photos.ts';
 import { formatPeso, parsePeso } from './money.ts';
 import { bestSellers, byDay, byPayment, filterOrders, periodRange, shiftPeriod, summarize } from './reports.ts';
-import { matchesSearch, searchWords } from './search.ts';
+import { matchesOrder, matchesSearch, searchWords } from './search.ts';
 import { stockByVariant } from './stock.ts';
 import type { Order, OrderLine, ProductPhoto, StockAdjustment } from './types.ts';
 
@@ -186,4 +186,33 @@ test('reports: "No event" lists only orders without an event', () => {
   assert.deepEqual(filterOrders(orders, { eventId: null }).map((o) => o.id), ['a']);
   assert.deepEqual(filterOrders(orders, { eventId: 'fair' }).map((o) => o.id), ['b']);
   assert.equal(filterOrders(orders, {}).length, 2);
+});
+
+test('checkout: quick cash amounts follow Philippine bills', () => {
+  const pesos = (due: number) => quickCash(due * 100).map((c) => c / 100);
+  assert.deepEqual(pesos(399), [400, 500, 1000]); // the client's examples
+  assert.deepEqual(pesos(250), [300, 500, 1000]);
+  assert.deepEqual(pesos(2548), [2600, 3000, 5000]);
+  assert.deepEqual(pesos(1000), [2000, 3000, 5000]);
+  assert.deepEqual(pesos(4900), [5000, 6000, 7000]);
+  assert.deepEqual(pesos(12345), [12400, 12500, 13000]);
+  assert.deepEqual(quickCash(39950).map((c) => c / 100), [400, 500, 1000]); // centavos round up too
+  assert.deepEqual(quickCash(0), []);
+});
+
+test('search: orders by number or buyer name', () => {
+  const ana = { number: 6, buyer: { name: 'Ana Santos' } };
+  const walkIn = { number: 12, buyer: null };
+  for (const q of ['6', '0006', '#0006', ' #6 ']) assert.ok(matchesOrder(ana, q), q);
+  assert.ok(!matchesOrder(ana, '60'));
+  assert.ok(matchesOrder(ana, 'santos ana'));
+  assert.ok(!matchesOrder(ana, 'bea'));
+  assert.ok(!matchesOrder(walkIn, 'ana'));
+  assert.ok(matchesOrder(walkIn, ''));
+});
+
+test('dates: short ranges for filter buttons', () => {
+  assert.match(formatRange('2026-11-16', '2026-11-22', '2026-11-23'), /^Nov 16\s*[–-]\s*22$/);
+  assert.match(formatRange('2026-11-23', '2026-11-23', '2026-11-23'), /^Nov 23$/);
+  assert.match(formatRange('2025-12-30', '2026-01-02', '2026-11-23'), /2025.*2026/);
 });

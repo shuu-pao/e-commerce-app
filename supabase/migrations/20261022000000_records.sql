@@ -118,7 +118,7 @@ grant execute on function public.push_records(jsonb) to authenticated;
 
 create or replace function public.stock_status(n numeric) returns text
 language sql immutable set search_path = '' as $$
-  select case when n <= 0 then 'out' when n <= 5 then 'low' end;
+  select case when n <= 0 then 'out' when n <= 3 then 'low' end;
 $$;
 
 -- Photos are data URLs: the covers inside the product record, the rest in 'photos' records

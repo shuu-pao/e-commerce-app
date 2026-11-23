@@ -1,9 +1,10 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import { useMemo, useState, type ReactNode } from 'react';
-import { ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { change, checkoutProblems, formatOrderNumber, stillEditable, totals } from '@/domain/checkout';
+import { cashPortion, change, checkoutProblems, formatOrderNumber, quickCash, stillEditable, totals } from '@/domain/checkout';
 import { centsToInput, formatPeso, parsePeso } from '@/domain/money';
 import type { Discount, Id, Order, PaymentMethod } from '@/domain/types';
 import { ONLINE_EVENT_ID, PAYMENT_METHODS } from '@/domain/types';
@@ -15,8 +16,9 @@ import { Choice } from '@/ui/Choice';
 import { DeletedOrderNote } from '@/ui/DeletedOrderNote';
 import { Field } from '@/ui/Field';
 import { OrderLines } from '@/ui/OrderLines';
+import { SLIM_MENU_WIDTH } from '@/ui/Sidebar';
 import { Empty, Row } from '@/ui/Screen';
-import { colors, radius, WIDE } from '@/ui/theme';
+import { colors, fonts, radius, touch, WIDE } from '@/ui/theme';
 import { Txt } from '@/ui/Txt';
 import { useFocusKey } from '@/ui/useFocusKey';
 
@@ -57,7 +59,8 @@ function CheckoutForm() {
   const currentEventId = useAppState((s) => s.settings.currentEventId);
   const events = useLive('events');
   const { width } = useWindowDimensions();
-  const twoColumns = (width >= WIDE ? width - 260 : width) >= 900;
+  const insets = useSafeAreaInsets();
+  const twoColumns = (width >= WIDE ? width - SLIM_MENU_WIDTH : width) >= 900;
 
   const [eventId, setEventId] = useState<Id | null>(opened ? opened.eventId : currentEventId);
   const [[discountKind, discountText], setDiscount] = useState(() => initialDiscount(opened));
@@ -222,11 +225,11 @@ function CheckoutForm() {
                     hideLabel
                     numeric
                     value={r.text}
-                    placeholder={left > 0 && !r.text ? centsToInput(left) : '0'}
+                    placeholder="Type the amount"
                     onChangeText={(v) => setRows(rows.map((x, j) => (j === i ? { ...x, text: v } : x)))}
                   />
                   {!r.text && left > 0 ? (
-                    <Button label="Rest" variant="ghost" accessibilityLabel={`Put the remaining ${formatPeso(left)} here`} onPress={() => setRows(rows.map((x, j) => (j === i ? { ...x, text: centsToInput(left) } : x)))} />
+                    <Button label={`Rest: ${formatPeso(left)}`} variant="ghost" accessibilityLabel={`Put the remaining ${formatPeso(left)} here`} onPress={() => setRows(rows.map((x, j) => (j === i ? { ...x, text: centsToInput(left) } : x)))} />
                   ) : null}
                 </View>
               </View>
@@ -243,21 +246,14 @@ function CheckoutForm() {
         )}
         <Button label={split ? 'Pay with one method' : 'Split payment'} variant="ghost" onPress={() => setSplit(!split)} style={styles.inlineButton} />
         {takesCash ? (
-          <View style={styles.cashBox}>
-            <Field
-              label="Cash received (₱)"
-              numeric
-              value={cashText}
-              onChangeText={setCashText}
-              placeholder={centsToInput(payments.filter((p) => p.method === 'cash').reduce((n, p) => n + p.amount, 0))}
-              error={cashError ?? (cashReceived !== null && changeDue === null ? 'Less than the cash amount.' : null)}
-              style={{ flex: 1 }}
-            />
-            <View style={styles.change}>
-              <Txt variant="small">Change</Txt>
-              <Txt variant="big" color={colors.okInk}>{changeDue === null ? '—' : formatPeso(changeDue)}</Txt>
-            </View>
-          </View>
+          <CashBox
+            due={cashPortion(payments)}
+            text={cashText}
+            onChange={setCashText}
+            received={cashReceived}
+            changeDue={changeDue}
+            error={cashError ?? (cashReceived !== null && changeDue === null ? 'Less than the cash amount.' : null)}
+          />
         ) : null}
       </Section>}
 
@@ -265,7 +261,22 @@ function CheckoutForm() {
         <Row label="Subtotal" value={formatPeso(t.subtotal)} />
         {t.discount ? <Row label={discount.kind === 'percent' ? `Discount (${discount.percent}%)` : 'Discount'} value={formatPeso(-t.discount)} /> : null}
         {online ? <Row label="Delivery fee" value={formatPeso(t.deliveryFee)} /> : null}
+      </View>
+    </View>
+  );
+
+  // Pinned under the choices, so Place order never needs a scroll (design review 1, option B).
+  const footer = (
+    <View style={[styles.footer, { paddingBottom: 14 + (twoColumns ? 0 : insets.bottom) }]}>
+      <View style={styles.footRow}>
         <Row label="Total" value={formatPeso(t.total)} strong />
+        {/* The cash box can be scrolled out of view above, so the change shows here too. */}
+        {takesCash && changeDue ? (
+          <View style={styles.footChange} accessibilityLiveRegion="polite">
+            <Txt weight="semibold" color={colors.okInk}>Change</Txt>
+            <Txt weight="bold" color={colors.okInk} style={styles.footChangeAmount}>{formatPeso(changeDue)}</Txt>
+          </View>
+        ) : null}
       </View>
       {tried && problems.length ? (
         <View style={styles.problems} accessibilityLiveRegion="polite">
@@ -293,15 +304,68 @@ function CheckoutForm() {
       {twoColumns ? (
         <View style={styles.twoCol}>
           <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.pad}>{summary}</ScrollView>
-          <ScrollView style={styles.side} contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">{panel}</ScrollView>
+          <View style={styles.side}>
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">{panel}</ScrollView>
+            {footer}
+          </View>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={[styles.pad, styles.stack]} keyboardShouldPersistTaps="handled">
-          {summary}
-          {panel}
-        </ScrollView>
+        <View style={{ flex: 1 }}>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={[styles.pad, styles.stack]} keyboardShouldPersistTaps="handled">
+            {summary}
+            {panel}
+          </ScrollView>
+          {footer}
+        </View>
       )}
     </>
+  );
+}
+
+/**
+ * Cash received, with one-tap amounts and the change under it (design review 2): an empty box looks
+ * empty, Exact and the next round bills fill it, and the change shows large and green once it's known.
+ */
+function CashBox({ due, text, onChange, received, changeDue, error }: {
+  due: number;
+  text: string;
+  onChange: (text: string) => void;
+  received: number | null;
+  changeDue: number | null;
+  error: string | null;
+}) {
+  const amounts = [{ label: 'Exact', cents: due }, ...quickCash(due).map((c) => ({ label: formatPeso(c), cents: c }))];
+  return (
+    <View style={styles.cashBox}>
+      <Field label="Cash received (₱)" numeric value={text} onChangeText={onChange} placeholder="Type the amount" error={error} />
+      <View style={styles.quickRow} accessibilityRole="radiogroup" accessibilityLabel="Quick cash amounts">
+        {amounts.map((a) => {
+          const on = received === a.cents;
+          return (
+            <Pressable
+              key={a.label}
+              accessibilityRole="radio"
+              aria-checked={on}
+              accessibilityLabel={a.label === 'Exact' ? 'Exact, ' + formatPeso(a.cents) : a.label}
+              onPress={() => onChange(centsToInput(a.cents))}
+              style={({ hovered }) => [styles.quick, on ? styles.quickOn : hovered && styles.quickHover]}
+            >
+              <Txt style={[styles.quickText, on && styles.quickTextOn]}>{a.label}</Txt>
+            </Pressable>
+          );
+        })}
+      </View>
+      <View style={[styles.changeStrip, changeDue !== null && styles.changeStripOn]} accessibilityLiveRegion="polite">
+        <Txt weight="semibold" color={changeDue !== null ? colors.okInk : colors.muted} style={styles.changeLabel}>Change</Txt>
+        {changeDue === null ? (
+          <Txt variant="small">Shows when you type</Txt>
+        ) : changeDue === 0 ? (
+          <Txt weight="bold" color={colors.okInk} style={styles.changeLabel}>No change</Txt>
+        ) : (
+          <Txt variant="big" color={colors.okInk} style={styles.changeBig}>{formatPeso(changeDue)}</Txt>
+        )}
+      </View>
+    </View>
   );
 }
 
@@ -317,6 +381,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 const styles = StyleSheet.create({
   twoCol: { flex: 1, flexDirection: 'row', backgroundColor: colors.white },
   side: { width: 440, flexGrow: 0, borderLeftWidth: 1, borderLeftColor: colors.line, backgroundColor: colors.surface },
+  footer: { gap: 10, paddingHorizontal: 20, paddingTop: 14, borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.surface, boxShadow: '0 -6px 18px rgba(31, 26, 28, 0.06)' },
   pad: { padding: 20, paddingBottom: 40 },
   stack: { gap: 24 },
   col: { gap: 12 },
@@ -329,8 +394,20 @@ const styles = StyleSheet.create({
   splitAmount: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   splitFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   inlineButton: { alignSelf: 'flex-start', marginLeft: -8 },
-  cashBox: { flexDirection: 'row', alignItems: 'flex-end', gap: 12, padding: 12, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.white },
-  change: { minWidth: 110, alignItems: 'flex-end', paddingBottom: 4 },
+  footRow: { gap: 6 },
+  footChange: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.md, backgroundColor: colors.okBg },
+  footChangeAmount: { fontSize: 22, lineHeight: 28, fontVariant: ['tabular-nums'] },
+  cashBox: { gap: 10, padding: 12, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.white },
+  quickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  quick: { flexGrow: 1, flexBasis: 70, minHeight: touch, paddingHorizontal: 10, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.lineStrong, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
+  quickHover: { borderColor: colors.accent },
+  quickOn: { borderColor: colors.accent, backgroundColor: colors.accent },
+  quickText: { fontFamily: fonts.semibold, fontSize: 15, fontVariant: ['tabular-nums'] },
+  quickTextOn: { color: colors.white },
+  changeStrip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 48, paddingHorizontal: 14, paddingVertical: 8, borderRadius: radius.md, backgroundColor: colors.raised },
+  changeStripOn: { backgroundColor: colors.okBg },
+  changeLabel: { fontSize: 17 },
+  changeBig: { fontSize: 30, lineHeight: 36 },
   totals: { gap: 8, paddingTop: 14, borderTopWidth: 1, borderTopColor: colors.line },
   problems: { gap: 4, padding: 12, borderRadius: radius.md, backgroundColor: colors.accentSoft },
 });

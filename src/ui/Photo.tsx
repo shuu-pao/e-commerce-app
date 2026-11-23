@@ -15,15 +15,17 @@ interface Props {
   badge?: string | null;
   /** Shown instead if `uri` fails to load. */
   fallback?: string | null;
+  /** A thin border, so a photo with a white background doesn't melt into the page (Edit product). */
+  framed?: boolean;
 }
 
 /** A square product photo, or a tinted square with the product's initials. */
-export function Photo({ uri: first, name, size = 56, fill, badge, fallback }: Props) {
+export function Photo({ uri: first, name, size = 56, fill, badge, fallback, framed }: Props) {
   const [failed, setFailed] = useState<string | null>(null);
   const uri = failed && failed === first ? fallback : first;
   const box = fill ? styles.fill : { width: size, height: size };
   return (
-    <View style={[styles.box, box, !uri && { backgroundColor: tintFor(name) }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+    <View style={[styles.box, box, framed && styles.framed, !uri && { backgroundColor: tintFor(name) }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {uri ? (
         <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={120} onError={fallback ? () => setFailed(first) : undefined} />
       ) : (
@@ -47,6 +49,7 @@ function initials(name: string): string {
 const styles = StyleSheet.create({
   box: { borderRadius: radius.md, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: colors.raised },
   fill: { width: '100%', aspectRatio: 1 },
+  framed: { borderWidth: 1, borderColor: colors.lineStrong },
   badge: { position: 'absolute', left: 6, bottom: 6, maxWidth: '86%', paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.pill, backgroundColor: colors.white },
   badgeText: { fontSize: 11, lineHeight: 15, color: colors.body },
 });

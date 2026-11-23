@@ -13,7 +13,7 @@ const BUCKET = 'catalog';
 const GRID_SIZE = 480;
 const gridName = (path: string) => path.replace(/\.jpg$/, `-${GRID_SIZE}.jpg`);
 
-/** 'out' = sold out, 'low' = 5 pieces or fewer. The number itself never leaves the database. */
+/** 'out' = sold out, 'low' = 3 pieces or fewer. The number itself never leaves the database. */
 export type StockStatus = 'out' | 'low' | null;
 
 export interface CatalogVariant {

@@ -58,6 +58,24 @@ export function change(cashReceived: Cents | null, payments: Payment[]): Cents |
   return cashReceived - due;
 }
 
+/**
+ * One-tap cash amounts after "Exact": what a buyer would hand over in Philippine bills (client, design
+ * review 2). The amount due rounded up to ₱100, ₱500, ₱1,000 and ₱5,000, the first three that differ and
+ * are above it, topped up with ₱1,000 steps when fewer are left. ₱399 → 400, 500, 1,000; ₱2,548 → 2,600,
+ * 3,000, 5,000; ₱1,000 → 2,000, 3,000, 5,000.
+ */
+export function quickCash(due: Cents, count = 3): Cents[] {
+  if (due <= 0) return [];
+  const up = (step: Cents) => Math.ceil(due / step) * step;
+  const out = new Set<Cents>();
+  for (const step of [10000, 50000, 100000, 500000]) {
+    const amount = up(step);
+    if (amount > due && out.size < count) out.add(amount);
+  }
+  for (let next = Math.floor(due / 100000) * 100000 + 100000; out.size < count; next += 100000) out.add(next);
+  return [...out].sort((a, b) => a - b);
+}
+
 /** What still blocks placing the order, in plain words; empty when it can be placed. */
 export function checkoutProblems(order: Pick<Order, 'lines' | 'discount' | 'deliveryFee' | 'payments' | 'cashReceived' | 'notPaid'>): string[] {
   const problems: string[] = [];

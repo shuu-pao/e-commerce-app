@@ -112,12 +112,15 @@ export function Catalog({ onSignIn }: { onSignIn: () => void }) {
         ) : null}
       </View>
       {categories.length ? (
-        <FilterChips
-          label="Categories"
-          options={[{ key: null, label: 'All products' }, ...categories.map((c) => ({ key: c.id, label: c.name }))]}
-          value={category}
-          onChange={setCategory}
-        />
+        // One row that swipes sideways, so the products start higher on a phone (design review 15).
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll} contentContainerStyle={styles.chips}>
+          <FilterChips
+            label="Categories"
+            options={[{ key: null, label: 'All products' }, ...categories.map((c) => ({ key: c.id, label: c.name }))]}
+            value={category}
+            onChange={setCategory}
+          />
+        </ScrollView>
       ) : null}
     </View>
   );
@@ -134,7 +137,7 @@ export function Catalog({ onSignIn }: { onSignIn: () => void }) {
       <View style={[styles.bar, { paddingTop: insets.top }]}>
         <View style={styles.barInner}>
           <Txt variant="brand" style={styles.brand}>caracebu</Txt>
-          <Button label="Instagram @caracebu" variant="outline" onPress={openInstagram} />
+          <Button label="Instagram" icon="logo-instagram" variant="outline" accessibilityLabel="Instagram @caracebu" onPress={openInstagram} style={styles.igButton} />
         </View>
       </View>
 
@@ -207,8 +210,16 @@ function Card({ product, columns, onPress }: { product: CatalogProduct; columns:
   );
 }
 
+/** On a phone, a description longer than this many characters shows its first lines and "Read more". */
+const LONG_DESCRIPTION = 220;
+const SHORT_LINES = 4;
+
 function Detail({ product, backLabel, onBack }: { product: CatalogProduct; backLabel: string; onBack: () => void }) {
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  // One column (a phone): the colours move up under the price and Instagram pins to the bottom (design review 14).
+  const narrow = width < 700;
+  const [more, setMore] = useState(false);
   const colours = product.variants.length > 1 ? product.variants : [];
   // No colour picked on open, so the product's own photos show first; tapping a colour shows only
   // its photos, and tapping it again goes back (client, 2026-10-27 and round 5 question 3).
@@ -219,7 +230,8 @@ function Detail({ product, backLabel, onBack }: { product: CatalogProduct; backL
   const shown = colour?.photos.length ? colour.photos : main;
   const at = Math.min(index, Math.max(0, shown.length - 1));
   return (
-    <ScrollView style={[StyleSheet.absoluteFill, styles.detail]} contentContainerStyle={[styles.detailContent, { paddingTop: insets.top + 12, paddingBottom: insets.bottom + 32 }]}>
+    <View style={[StyleSheet.absoluteFill, styles.detail]}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={[styles.detailContent, { paddingTop: insets.top + 12, paddingBottom: (narrow ? 0 : insets.bottom) + 32 }]}>
       <Button label={`Back to ${backLabel}`} variant="ghost" icon="chevron-back" onPress={onBack} style={styles.back} />
       <View style={styles.detailRow}>
         <View style={[styles.detailPhoto, product.stock === 'out' && styles.dim]}>
@@ -254,38 +266,57 @@ function Detail({ product, backLabel, onBack }: { product: CatalogProduct; backL
             <Txt variant="big">{formatPeso(product.price)}</Txt>
             <StockTag stock={product.stock} />
           </View>
-          {product.description ? (
-            <Txt color={colors.body} style={styles.description}>
-              {/* **words** show in bold, as in ChatGPT and chat apps; splitting puts them at odd indexes (client, 2026-10-28) */}
-              {product.description.split(/\*\*(.+?)\*\*/).map((part, i) => (i % 2 ? <Txt key={i} weight="bold" color={colors.ink}>{part}</Txt> : part))}
-            </Txt>
-          ) : null}
           {colours.length ? (
             <View style={styles.colours}>
-              <Txt weight="semibold">Colours</Txt>
-              {colours.map((v) => {
-                const on = v.id === colourId;
-                return (
-                  <Pressable
-                    key={v.id}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${v.name}${stockText(v.stock)}`}
-                    {...pressedState(on)}
-                    onPress={() => {
-                      setColourId(on ? null : v.id);
-                      setIndex(0);
-                    }}
-                    style={({ hovered }) => [styles.colour, (on || hovered) && { borderColor: colors.accent }]}
-                  >
-                    <Photo uri={v.photo ?? product.photo} name={v.name} size={44} />
-                    <Txt weight="semibold" style={{ flex: 1 }}>{v.name}</Txt>
-                    <StockTag stock={v.stock} />
-                  </Pressable>
-                );
-              })}
+              <Txt weight="semibold">Colours <Txt variant="small">· tap to see photos</Txt></Txt>
+              <View style={styles.swatches}>
+                {colours.map((v) => {
+                  const on = v.id === colourId;
+                  return (
+                    <Pressable
+                      key={v.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${v.name}${stockText(v.stock)}`}
+                      {...pressedState(on)}
+                      onPress={() => {
+                        setColourId(on ? null : v.id);
+                        setIndex(0);
+                      }}
+                      style={[styles.swatch, v.stock === 'out' && styles.dim]}
+                    >
+                      {({ hovered }) => (
+                        <>
+                          <View style={[styles.swatchRing, (on || hovered) && { borderColor: colors.accent }]}>
+                            <View style={styles.swatchPhoto}>
+                              <Photo uri={v.photo ?? product.photo} name={v.name} size={SWATCH} />
+                            </View>
+                          </View>
+                          <Txt variant="small" weight={on ? 'bold' : 'medium'} color={on ? colors.accent : colors.ink} numberOfLines={2} style={styles.swatchName}>{v.name}</Txt>
+                          {v.stock ? <MiniTag stock={v.stock} /> : null}
+                        </>
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </View>
             </View>
           ) : null}
-          <Button label="Message us on Instagram" size="lg" onPress={openInstagram} style={styles.order} />
+          {product.description ? (
+            <View style={styles.descriptionWrap}>
+              <Txt
+                color={colors.body}
+                style={styles.description}
+                numberOfLines={narrow && !more ? SHORT_LINES : undefined}
+              >
+                {/* **words** show in bold, as in ChatGPT and chat apps; splitting puts them at odd indexes (client, 2026-10-28) */}
+                {product.description.split(/\*\*(.+?)\*\*/).map((part, i) => (i % 2 ? <Txt key={i} weight="bold" color={colors.ink}>{part}</Txt> : part))}
+              </Txt>
+              {narrow && product.description.length > LONG_DESCRIPTION ? (
+                <Button label={more ? 'Show less' : 'Read more'} variant="ghost" onPress={() => setMore(!more)} style={styles.readMore} />
+              ) : null}
+            </View>
+          ) : null}
+          {narrow ? null : <Button label="Message us on Instagram" icon="logo-instagram" size="lg" onPress={openInstagram} style={styles.order} />}
           <Txt variant="small">
             {product.stock === 'out'
               ? 'Sold out for now. Message us to ask when it’s back.'
@@ -294,7 +325,25 @@ function Detail({ product, backLabel, onBack }: { product: CatalogProduct; backL
         </View>
       </View>
     </ScrollView>
+    {narrow ? (
+      <View style={[styles.orderBar, { paddingBottom: 10 + insets.bottom }]}>
+        <View>
+          <Txt variant="heading">{formatPeso(product.price)}</Txt>
+          {colours.length ? <Txt variant="small">{colour ? colour.name : `${colours.length} colours`}</Txt> : null}
+        </View>
+        <Button label="Message us on Instagram" icon="logo-instagram" size="lg" onPress={openInstagram} style={styles.orderBarButton} />
+      </View>
+    ) : null}
+    </View>
   );
+}
+
+const SWATCH = 64;
+
+/** "Low" or "Sold out" under a colour, smaller than the card's tag. */
+function MiniTag({ stock }: { stock: StockStatus }) {
+  const out = stock === 'out';
+  return <Txt weight="bold" style={[styles.miniTag, out ? styles.miniOut : styles.miniLow]}>{out ? 'Sold out' : 'Low'}</Txt>;
 }
 
 const styles = StyleSheet.create({
@@ -328,7 +377,21 @@ const styles = StyleSheet.create({
   detailInfo: { flexGrow: 1, flexBasis: 300, minWidth: 0, gap: 14 },
   priceRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 10 },
   description: { maxWidth: 560 },
-  colours: { gap: 8 },
-  colour: { minHeight: 60, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 12, borderWidth: 1.5, borderColor: colors.lineStrong, borderRadius: radius.lg },
+  colours: { gap: 10 },
+  swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+  swatch: { width: SWATCH + 12, alignItems: 'center', gap: 4 },
+  swatchRing: { padding: 3, borderRadius: (SWATCH + 10) / 2, borderWidth: 2, borderColor: 'transparent' },
+  swatchPhoto: { width: SWATCH, height: SWATCH, borderRadius: SWATCH / 2, overflow: 'hidden', borderWidth: 1, borderColor: colors.line },
+  swatchName: { textAlign: 'center', lineHeight: 16 },
+  miniTag: { paddingHorizontal: 6, borderRadius: radius.pill, fontSize: 11, lineHeight: 16, overflow: 'hidden' },
+  miniLow: { backgroundColor: colors.warnBg, color: colors.warnInk },
+  miniOut: { backgroundColor: colors.accentSoft, color: colors.accent },
+  descriptionWrap: { gap: 2, alignItems: 'flex-start' },
+  readMore: { marginLeft: -10 },
   order: { alignSelf: 'flex-start', marginTop: 4 },
+  orderBar: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: PAD, paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.white, boxShadow: '0 -6px 18px rgba(31, 26, 28, 0.08)' },
+  orderBarButton: { flex: 1 },
+  chipsScroll: { flexGrow: 0, marginHorizontal: -(PAD - 8) - 8 },
+  chips: { paddingHorizontal: PAD },
+  igButton: { minHeight: 40, paddingHorizontal: 14 },
 });

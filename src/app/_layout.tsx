@@ -3,6 +3,7 @@ import { Figtree_500Medium } from '@expo-google-fonts/figtree/500Medium';
 import { Figtree_600SemiBold } from '@expo-google-fonts/figtree/600SemiBold';
 import { Figtree_700Bold } from '@expo-google-fonts/figtree/700Bold';
 import { useFonts } from 'expo-font';
+import { usePathname } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -16,7 +17,7 @@ import { startSync, syncEnabled } from '@/data/sync';
 import { hideBoot } from '@/ui/boot';
 import { Catalog } from '@/ui/Catalog';
 import { SetPassword } from '@/ui/SetPassword';
-import { Sidebar } from '@/ui/Sidebar';
+import { MENU_WIDTH, Sidebar, SLIM_MENU_WIDTH, slimMenuOn } from '@/ui/Sidebar';
 import { SignIn } from '@/ui/SignIn';
 import { colors, fonts, WIDE } from '@/ui/theme';
 import { Txt } from '@/ui/Txt';
@@ -105,14 +106,17 @@ function Gate() {
 function AppDrawer() {
   const { width } = useWindowDimensions();
   const permanent = width >= WIDE;
+  // While selling on a wide screen, the menu shrinks to icons so the products get more room (design review 8).
+  const pathname = usePathname();
+  const slim = permanent && slimMenuOn(pathname);
   return (
     <Drawer
-      drawerContent={(props) => <Sidebar {...props} permanent={permanent} />}
+      drawerContent={(props) => <Sidebar {...props} permanent={permanent} slim={slim} />}
       backBehavior="history"
       screenOptions={{
         drawerType: permanent ? 'permanent' : 'front',
         headerLeft: permanent ? () => null : undefined, // no menu button while the sidebar is always open
-        drawerStyle: { width: 260, backgroundColor: colors.surface, borderRightWidth: 0 },
+        drawerStyle: { width: slim ? SLIM_MENU_WIDTH : MENU_WIDTH, backgroundColor: colors.surface, borderRightWidth: 0 },
         overlayColor: colors.scrim,
         headerShadowVisible: false,
         headerStyle: { backgroundColor: colors.white, borderBottomWidth: 1, borderBottomColor: colors.line },

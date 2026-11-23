@@ -75,6 +75,7 @@ export default function Categories() {
         title={removing ? `Remove ${removing.name}?` : 'Remove category?'}
         message="Its products stay in All products and in their other categories."
         confirmLabel="Remove"
+        cancelLabel="Keep category"
         onCancel={() => setRemoving(null)}
         onConfirm={() => {
           if (removing) remove('categories', removing.id);

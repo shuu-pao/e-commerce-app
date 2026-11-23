@@ -17,7 +17,7 @@ import { ConfirmDialog } from '@/ui/ConfirmDialog';
 import { Field } from '@/ui/Field';
 import { OrderLines } from '@/ui/OrderLines';
 import { Card, Empty, Row, Screen } from '@/ui/Screen';
-import { colors } from '@/ui/theme';
+import { colors, fonts, radius } from '@/ui/theme';
 import { Txt } from '@/ui/Txt';
 
 /** The receipt on screen: right after checkout ("Order placed"), and from All orders. */
@@ -57,22 +57,25 @@ export default function OrderSummary() {
   return (
     <Screen maxWidth={640}>
       <Drawer.Screen options={{ title: placed ? 'Order placed' : `Order ${title}` }} />
-      {placed ? (
-        <View style={styles.placed}>
-          <View style={styles.check}>
-            <Icon name="checkmark" size={34} color={colors.accent} />
-          </View>
-          <Txt variant="title">Order placed</Txt>
-        </View>
-      ) : null}
+      {placed ? <PlacedBox order={order} title={title} total={t.total} changeDue={changeDue} onNew={() => router.replace('/sell')} /> : null}
       <View style={styles.head}>
-        <Txt variant={placed ? 'heading' : 'title'}>Order {title}</Txt>
+        {placed ? null : <Txt variant="title">Order {title}</Txt>}
         <Txt color={colors.muted}>{formatDateTime(order.createdAt)} · {eventName(order.eventId)}</Txt>
         <Txt weight="semibold" color={syncEnabled && unsynced ? colors.warnInk : colors.okInk}>{syncNote}</Txt>
-        {order.notPaid ? (
-          <Txt weight="bold" color={late ? colors.accent : colors.warnInk}>Not paid yet · {unpaidNote(order, today)}</Txt>
-        ) : null}
       </View>
+
+      {/* The status and Mark as paid in one row, above the receipt (client, design review 10). */}
+      {order.notPaid ? (
+        <View style={[styles.status, late ? styles.statusLate : null]}>
+          <View style={styles.statusText}>
+            <Txt variant="label" color={late ? colors.accent : colors.warnInk}>Status</Txt>
+            <Txt variant="heading" color={late ? colors.accent : colors.warnInk}>Not paid yet</Txt>
+            <Txt color={late ? colors.accent : colors.warnInk}>{unpaidNote(order, today)}</Txt>
+            <Txt weight="bold" color={colors.ink}>{formatPeso(t.total)} to collect</Txt>
+          </View>
+          <Button label="Mark as paid" size="lg" icon="checkmark" onPress={() => (cartBusy ? setAsk('pay') : pay())} style={styles.statusButton} />
+        </View>
+      ) : null}
 
       <Card>
         <OrderLines lines={order.lines} />
@@ -103,8 +106,6 @@ export default function OrderSummary() {
       <InvoiceCard key={order.id + (order.invoice ? '-invoice' : '')} order={order} onOpen={openDoc} />
 
       <View style={styles.actions}>
-        {order.notPaid ? <Button label="Mark as paid" size="lg" icon="checkmark" onPress={() => (cartBusy ? setAsk('pay') : pay())} style={styles.grow} /> : null}
-        {placed ? <Button label="New order" size="lg" variant={order.notPaid ? 'outline' : 'primary'} onPress={() => router.replace('/sell')} style={styles.grow} /> : null}
         <Button label="Edit order" variant={placed || order.notPaid ? 'outline' : 'primary'} size="lg" icon="create-outline" onPress={() => (cartBusy ? setAsk('edit') : edit())} style={styles.grow} />
       </View>
       <Button label={order.notPaid ? 'Cancel order' : 'Delete order'} variant="danger" onPress={() => setAsk('delete')} style={styles.delete} />
@@ -114,6 +115,7 @@ export default function OrderSummary() {
         title="Replace the current cart?"
         message="The items in the cart now are removed, and this order opens instead."
         confirmLabel={ask === 'pay' ? 'Mark this order as paid' : 'Edit this order'}
+        cancelLabel="Keep the cart"
         onCancel={() => setAsk(null)}
         onConfirm={() => {
           const then = ask === 'pay' ? pay : edit;
@@ -126,6 +128,7 @@ export default function OrderSummary() {
         title={order.notPaid ? `Cancel order ${title}?` : `Delete order ${title}?`}
         message={order.notPaid ? "The buyer didn't pay: its pieces go back on sale. This can't be undone." : "Its items go back into stock and it leaves the reports. This can't be undone."}
         confirmLabel={order.notPaid ? 'Cancel order' : 'Delete order'}
+        cancelLabel="Keep order"
         onCancel={() => setAsk(null)}
         onConfirm={() => {
           setAsk(null);
@@ -134,6 +137,38 @@ export default function OrderSummary() {
         }}
       />
     </Screen>
+  );
+}
+
+/**
+ * Right after checkout: what the seller needs next, first (design review 3). The order number and how it
+ * was paid, the change to give in large type, and New order beside it.
+ */
+function PlacedBox({ order, title, total, changeDue, onNew }: { order: Order; title: string; total: number; changeDue: number | null; onNew: () => void }) {
+  const paidWith = order.notPaid
+    ? 'not paid yet'
+    : order.payments
+        .map((p) => `${paymentLabel(p.method)} ${formatPeso(p.method === 'cash' && order.cashReceived !== null ? order.cashReceived : p.amount)}`)
+        .join(' + ');
+  const [label, amount] = changeDue ? ['Give change', changeDue] : ['Paid', total];
+  const ink = order.notPaid ? colors.warnInk : colors.okInk;
+  return (
+    <View style={[styles.placedBox, order.notPaid && styles.placedBoxUnpaid]} accessibilityLiveRegion="polite">
+      <View style={styles.placedText}>
+        <View style={styles.placedTitle}>
+          <Icon name="checkmark" size={20} color={ink} />
+          <Txt weight="semibold" color={ink} style={styles.placedLine}>Order {title} placed · {paidWith}</Txt>
+        </View>
+        {/* A not-paid order's amount and Mark as paid are in the status row right below. */}
+        {order.notPaid ? null : (
+          <>
+            <Txt weight="medium" color={ink}>{label}</Txt>
+            <Txt color={ink} style={styles.placedAmount}>{formatPeso(amount)}</Txt>
+          </>
+        )}
+      </View>
+      <Button label="New order" size="lg" onPress={onNew} style={styles.placedButton} />
+    </View>
   );
 }
 
@@ -179,9 +214,18 @@ function InvoiceCard({ order, onOpen }: { order: Order; onOpen: (kind: 'invoice'
 }
 
 const styles = StyleSheet.create({
-  placed: { alignItems: 'center', gap: 10, paddingTop: 8 },
-  check: { width: 64, height: 64, borderRadius: 32, backgroundColor: colors.accentSoft, alignItems: 'center', justifyContent: 'center' },
+  placedBox: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 16, padding: 18, borderRadius: radius.lg, borderWidth: 1, borderColor: '#BFDCC9', backgroundColor: colors.okBg },
+  placedBoxUnpaid: { borderColor: '#F0D9B5', backgroundColor: colors.warnBg },
+  placedText: { flexGrow: 1, flexBasis: 220, gap: 2 },
+  placedTitle: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  placedLine: { fontSize: 16, flexShrink: 1 },
+  placedAmount: { fontFamily: fonts.bold, fontSize: 44, lineHeight: 52, fontVariant: ['tabular-nums'] },
+  placedButton: { flexGrow: 1, flexBasis: 180, maxWidth: 260 },
   head: { gap: 4 },
+  status: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 16, padding: 18, borderRadius: radius.lg, borderWidth: 1, borderColor: '#F0D9B5', backgroundColor: colors.warnBg },
+  statusLate: { borderColor: colors.accent, backgroundColor: colors.accentSoft },
+  statusText: { flexGrow: 1, flexBasis: 220, gap: 2 },
+  statusButton: { flexGrow: 1, flexBasis: 180, maxWidth: 260 },
   totals: { gap: 8, paddingTop: 4 },
   actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   grow: { flexGrow: 1, flexBasis: 200 },

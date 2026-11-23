@@ -9,12 +9,14 @@ interface Props {
   title: string;
   message?: string;
   confirmLabel: string;
+  /** What the safe button keeps ("Keep order"), so it can't be read as "cancel the order" (design review 9). */
+  cancelLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
 /** Asks before something that can't be undone. (Alert.alert does nothing on the web.) */
-export function ConfirmDialog({ visible, title, message, confirmLabel, onConfirm, onCancel }: Props) {
+export function ConfirmDialog({ visible, title, message, confirmLabel, cancelLabel = 'Cancel', onConfirm, onCancel }: Props) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={styles.scrim}>
@@ -23,7 +25,7 @@ export function ConfirmDialog({ visible, title, message, confirmLabel, onConfirm
           <Txt variant="heading">{title}</Txt>
           {message ? <Txt color={colors.body}>{message}</Txt> : null}
           <View style={styles.actions}>
-            <Button label="Cancel" variant="ghost" onPress={onCancel} />
+            <Button label={cancelLabel} variant="ghost" onPress={onCancel} />
             <Button label={confirmLabel} onPress={onConfirm} />
           </View>
         </View>

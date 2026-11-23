@@ -13,7 +13,7 @@ import { Button } from './Button';
 import { ConfirmDialog } from './ConfirmDialog';
 import { DeletedOrderNote } from './DeletedOrderNote';
 import { Photo } from './Photo';
-import { colors, radius, touch } from './theme';
+import { colors, radius } from './theme';
 import { Txt } from './Txt';
 
 /** The running order beside the products (or in a sheet on narrow screens). */
@@ -65,23 +65,27 @@ export function CartPanel({ onCheckout }: { onCheckout?: () => void }) {
             const atMax = l.qty >= max;
             const label = l.name + (l.variantName ? `, ${l.variantName}` : '');
             return (
+              // Two rows per line (design review 5): name and price, then the colour beside − qty + and remove.
               <View key={l.variantId} style={styles.line}>
-                <View style={styles.lineTop}>
-                  <Photo uri={photoFor(l)} name={l.name} size={56} />
-                  <View style={styles.lineText}>
-                    <Txt weight="semibold" numberOfLines={2}>{l.name}</Txt>
-                    <Txt variant="small">{(l.variantName ? `${l.variantName} · ` : '') + `${formatPeso(l.price)} each`}</Txt>
+                <Photo uri={photoFor(l)} name={l.name} size={52} />
+                <View style={styles.lineBody}>
+                  <View style={styles.lineTop}>
+                    <Txt weight="semibold" numberOfLines={1} style={styles.lineName}>{l.name}</Txt>
+                    <Txt weight="bold" style={styles.num}>{formatPeso(lineTotal(l))}</Txt>
                   </View>
-                  <Txt weight="bold" style={styles.num}>{formatPeso(lineTotal(l))}</Txt>
-                </View>
-                <View style={styles.controls}>
-                  <Step icon="remove" label={'Decrease ' + label} onPress={() => cartSetQty(l, l.qty - 1)} />
-                  <Txt weight="bold" style={styles.qty} accessibilityLabel={`Quantity ${l.qty}`}>{l.qty}</Txt>
-                  <Step icon="add" label={'Increase ' + label} disabled={atMax} onPress={() => cartSetQty(l, l.qty + 1)} />
-                  <Txt variant="small" style={{ flex: 1, paddingLeft: 6 }}>{atMax ? 'No more in stock' : ''}</Txt>
-                  <Pressable accessibilityRole="button" accessibilityLabel={'Remove ' + label} onPress={() => cartSetQty(l, 0)} style={styles.remove}>
-                    <Icon name="close" size={20} color={colors.muted} />
-                  </Pressable>
+                  <View style={styles.controls}>
+                    <Txt variant="small" numberOfLines={2} style={styles.variant} color={atMax ? colors.accent : colors.muted}>
+                      {[l.variantName, atMax ? 'no more left' : l.qty > 1 ? `${formatPeso(l.price)} each` : null].filter(Boolean).join(' · ')}
+                    </Txt>
+                    <View style={styles.stepper}>
+                      <Step icon="remove" label={'Decrease ' + label} onPress={() => cartSetQty(l, l.qty - 1)} />
+                      <Txt weight="bold" style={styles.qty} accessibilityLabel={`Quantity ${l.qty}`}>{l.qty}</Txt>
+                      <Step icon="add" label={'Increase ' + label} disabled={atMax} onPress={() => cartSetQty(l, l.qty + 1)} />
+                    </View>
+                    <Pressable accessibilityRole="button" accessibilityLabel={'Remove ' + label} onPress={() => cartSetQty(l, 0)} hitSlop={4} style={styles.remove}>
+                      <Icon name="close" size={18} color={colors.muted} />
+                    </Pressable>
+                  </View>
                 </View>
               </View>
             );
@@ -114,6 +118,7 @@ export function CartPanel({ onCheckout }: { onCheckout?: () => void }) {
         title={editing ? 'Stop editing this order?' : 'Clear the current order?'}
         message={editing ? 'The order stays as it was saved.' : 'Everything in the cart is removed.'}
         confirmLabel={editing ? 'Stop editing' : 'Clear'}
+        cancelLabel={editing ? 'Keep editing' : 'Keep the order'}
         onCancel={() => setConfirmClear(false)}
         onConfirm={() => {
           setConfirmClear(false);
@@ -131,12 +136,16 @@ function Step({ icon, label, disabled, onPress }: { icon: 'add' | 'remove'; labe
       accessibilityLabel={label}
       disabled={disabled}
       onPress={onPress}
-      style={({ hovered }) => [styles.step, hovered && !disabled && { borderColor: colors.accent }, disabled && { opacity: 0.35 }]}
+      hitSlop={4}
+      style={({ hovered }) => [styles.step, hovered && !disabled && { backgroundColor: colors.raised }, disabled && { opacity: 0.3 }]}
     >
-      <Icon name={icon} size={18} color={colors.ink} />
+      <Icon name={icon} size={17} color={colors.ink} />
     </Pressable>
   );
 }
+
+/** The − and + buttons: smaller than the usual 44 so a line fits on two rows, with a hit slop that makes up the rest. */
+const STEP = 36;
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: colors.white },
@@ -144,14 +153,17 @@ const styles = StyleSheet.create({
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   deleted: { paddingHorizontal: 20, paddingTop: 12 },
   lines: { paddingHorizontal: 20 },
-  line: { paddingVertical: 12, gap: 6, borderBottomWidth: 1, borderBottomColor: colors.line },
-  lineTop: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
-  lineText: { flex: 1, minWidth: 0, gap: 2 },
+  line: { flexDirection: 'row', gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.line },
+  lineBody: { flex: 1, minWidth: 0, gap: 4 },
+  lineTop: { flexDirection: 'row', gap: 8, alignItems: 'baseline' },
+  lineName: { flex: 1, minWidth: 0 },
   num: { fontVariant: ['tabular-nums'] },
-  controls: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingLeft: 68 },
-  step: { width: touch, height: touch, borderRadius: touch / 2, borderWidth: 1, borderColor: colors.lineStrong, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white },
-  qty: { minWidth: 32, textAlign: 'center', fontSize: 16 },
-  remove: { width: touch, height: touch, alignItems: 'center', justifyContent: 'center', borderRadius: radius.pill },
+  controls: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  variant: { flex: 1, minWidth: 0 },
+  stepper: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.lineStrong, borderRadius: radius.pill, backgroundColor: colors.white },
+  step: { width: STEP, height: STEP, borderRadius: STEP / 2, alignItems: 'center', justifyContent: 'center' },
+  qty: { minWidth: 26, textAlign: 'center', fontSize: 15, fontVariant: ['tabular-nums'] },
+  remove: { width: STEP, height: STEP, alignItems: 'center', justifyContent: 'center', borderRadius: radius.pill },
   foot: { padding: 20, gap: 10, borderTopWidth: 1, borderTopColor: colors.line },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
 });

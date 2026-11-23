@@ -101,7 +101,7 @@ await push(OWNER, [
     variants: [{ id: 'v-yellow', name: 'Yellow', photo: null }, { id: 'v-white', name: 'White', photo: null }, { id: 'v-pink', name: 'Pink', photo: null }] }),
   rec('products', P2, { name: 'Hidden', description: '', price: 100, categoryIds: ['eeeeeeee-0000-4000-8000-000000000032'], photo: null, variants: [{ id: 'v-h', name: '', photo: null }] }),
   rec('stock', 'eeeeeeee-0000-4000-8000-000000000011', { productId: P1, variantId: 'v-yellow', delta: 8 }),
-  rec('stock', 'eeeeeeee-0000-4000-8000-000000000012', { productId: P1, variantId: 'v-white', delta: 4 }),
+  rec('stock', 'eeeeeeee-0000-4000-8000-000000000012', { productId: P1, variantId: 'v-white', delta: 3 }),
   rec('orders', 'eeeeeeee-0000-4000-8000-000000000021', { number: 50, lines: [{ variantId: 'v-yellow', qty: 2 }] }),
 ]);
 await db.exec('set role anon;');
@@ -111,8 +111,8 @@ await db.exec('reset role;');
 assert.deepEqual(cat.products.map((p) => p.name), ['Daisy claw clip'], 'only switched-on products');
 assert.deepEqual(cat.categories.map((c) => c.name), ['Hairclips'], 'only categories of shown products');
 const daisy = cat.products[0];
-assert.deepEqual(daisy.variants.map((v) => v.stock), [null, 'low', 'out'], 'yellow 6 left, white 4, pink 0');
-assert.equal(daisy.stock, null, '10 left in total');
+assert.deepEqual(daisy.variants.map((v) => v.stock), [null, 'low', 'out'], 'yellow 6 left, white 3, pink 0');
+assert.equal(daisy.stock, null, '9 left in total');
 assert.equal(daisy.photo, createHash('sha256').update(photo).digest('hex') + '.jpg');
 assert.ok(!JSON.stringify(cat).match(/"(delta|qty|lines)"/), 'no stock numbers or orders leave');
 

@@ -1,8 +1,9 @@
 import { Icon } from '@/ui/Icon';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import { Drawer } from 'expo-router/drawer';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Switch, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { centsToInput, parsePeso } from '@/domain/money';
 import { MAX_COLOUR_PHOTOS, MAX_PRODUCT_PHOTOS, photoList, type PhotoItem } from '@/domain/photos';
@@ -13,7 +14,7 @@ import { adjustStock, newId, remove, save, savePhotos } from '@/data/store';
 import { pickSquarePhotos } from '@/lib/photo';
 import { Button } from '@/ui/Button';
 import { ConfirmDialog } from '@/ui/ConfirmDialog';
-import { Field } from '@/ui/Field';
+import { Field, type FieldInput } from '@/ui/Field';
 import { Photo } from '@/ui/Photo';
 import { Card, Empty, Screen } from '@/ui/Screen';
 import { colors, fonts, radius, touch } from '@/ui/theme';
@@ -80,6 +81,19 @@ function Editor({ product }: { product: Product | undefined }) {
   const [busyPhoto, setBusyPhoto] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const insets = useSafeAreaInsets();
+  // What the form opened with, to tell when something changed ("Changes not saved" in the Save bar).
+  const [opened] = useState(() => ({ name, description, priceText, categoryIds, photos, showInCatalog, variants }));
+  const dirty =
+    name !== opened.name || description !== opened.description || priceText !== opened.priceText || showInCatalog !== opened.showInCatalog ||
+    categoryIds.join() !== opened.categoryIds.join() || photos !== opened.photos ||
+    variants.length !== opened.variants.length ||
+    variants.some((v, i) => v.name !== opened.variants[i]?.name || v.stockText !== opened.variants[i]?.stockText || v.photos !== opened.variants[i]?.photos);
+  // Save jumps to the first field that needs fixing (small fixes: the message alone was at the very bottom).
+  const nameRef = useRef<FieldInput>(null);
+  const priceRef = useRef<FieldInput>(null);
+  const variantRefs = useRef<Record<string, FieldInput | null>>({});
+  const stockRefs = useRef<Record<string, FieldInput | null>>({});
 
   const price = parsePeso(priceText);
   const multi = variants.length > 1;
@@ -117,7 +131,16 @@ function Editor({ product }: { product: Product | undefined }) {
 
   const submit = () => {
     setTried(true);
-    if (!valid || price === null) return;
+    if (!valid || price === null) {
+      const bad = variants.findIndex((_, i) => errors.variant(i) || errors.stock(i));
+      const first =
+        errors.name ? nameRef.current
+        : errors.price ? priceRef.current
+        : bad >= 0 ? (errors.variant(bad) ? variantRefs.current[variants[bad].id] : stockRefs.current[variants[bad].id])
+        : null;
+      first?.focus();
+      return;
+    }
     const id = product?.id ?? newId();
     save('products', {
       id,
@@ -136,9 +159,18 @@ function Editor({ product }: { product: Product | undefined }) {
     router.replace('/products');
   };
 
+  const missing = [errors.name && 'title', errors.price && 'price'].filter(Boolean);
   return (
+    <View style={{ flex: 1 }}>
     <Screen maxWidth={880}>
       <Drawer.Screen options={{ title: product ? 'Edit product' : 'Add product' }} />
+      {tried && !valid ? (
+        <View style={styles.problems} accessibilityLiveRegion="polite">
+          <Txt color={colors.accent} weight="semibold">
+            {missing.length ? `Add the ${missing.join(' and ')} to save.` : 'Fix the highlighted fields to save.'}
+          </Txt>
+        </View>
+      ) : null}
       <View style={styles.section}>
         <View style={styles.sectionHead}>
           <Txt variant="heading">Product photos</Txt>
@@ -150,7 +182,7 @@ function Editor({ product }: { product: Product | undefined }) {
           {photos.map((p, i) => (
             <View key={i} style={styles.tileCol}>
               <View style={[styles.tile, i === 0 && styles.tileCover]}>
-                <Photo uri={p.uri} name={name || 'Product'} size={128} />
+                <Photo uri={p.uri} name={name || 'Product'} size={128} framed />
                 {i === 0 ? (
                   <View style={styles.coverTag}>
                     <Txt variant="small" weight="bold" color={colors.white}>Cover</Txt>
@@ -176,9 +208,9 @@ function Editor({ product }: { product: Product | undefined }) {
       {photoError ? <Txt color={colors.accent} weight="semibold">{photoError}</Txt> : null}
       <View style={styles.top}>
         <View style={styles.fields}>
-          <Field label="Title" value={name} onChangeText={setName} error={tried ? errors.name : null} />
+          <Field label="Title" tag={{ text: 'Needed', tone: 'needed' }} inputRef={nameRef} value={name} onChangeText={setName} error={tried ? errors.name : null} />
           <Field label="Description" value={description} onChangeText={setDescription} multiline placeholder="Material, size…" />
-          <Field label="Price (₱), the same for every colour" numeric value={priceText} onChangeText={setPriceText} error={tried || priceText ? errors.price : null} style={{ maxWidth: 260 }} />
+          <Field label="Price (₱), the same for every colour" tag={{ text: 'Needed', tone: 'needed' }} inputRef={priceRef} numeric value={priceText} onChangeText={setPriceText} error={tried || priceText ? errors.price : null} style={{ maxWidth: 260 }} />
           <View style={[styles.catalog, showInCatalog && styles.catalogOn]}>
             <Switch
               value={showInCatalog}
@@ -232,17 +264,18 @@ function Editor({ product }: { product: Product | undefined }) {
           <View key={v.id} style={styles.variant}>
             <View style={styles.colourPhotos}>
               {v.photos.map((p, k) => (
-                <Pressable
-                  key={k}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Remove photo ${k + 1} of ${v.name || 'this colour'}`}
-                  onPress={() => setVariant(i, { photos: v.photos.filter((_, j) => j !== k) })}
-                >
-                  <Photo uri={p.uri} name={v.name || name || '+'} size={52} />
-                  <View style={styles.smallRemove}>
-                    <Icon name="close" size={12} color={colors.ink} />
-                  </View>
-                </Pressable>
+                <View key={k}>
+                  <Photo uri={p.uri} name={v.name || name || '+'} size={COLOUR_PHOTO} framed />
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove photo ${k + 1} of ${v.name || 'this colour'}`}
+                    hitSlop={8}
+                    onPress={() => setVariant(i, { photos: v.photos.filter((_, j) => j !== k) })}
+                    style={styles.smallRemove}
+                  >
+                    <Icon name="close" size={15} color={colors.white} />
+                  </Pressable>
+                </View>
               ))}
               {v.photos.length < MAX_COLOUR_PHOTOS ? (
                 <Pressable accessibilityRole="button" accessibilityLabel={`Add a photo for ${v.name || 'this colour'}`} onPress={() => addPhotos(i)} disabled={!!busyPhoto} style={styles.smallAdd}>
@@ -256,6 +289,7 @@ function Editor({ product }: { product: Product | undefined }) {
               onChangeText={(t) => setVariant(i, { name: t })}
               placeholder={multi ? 'e.g. Yellow' : 'Leave empty if there are no colours'}
               error={tried ? errors.variant(i) : null}
+              inputRef={(el) => { variantRefs.current[v.id] = el; }}
               style={styles.variantName}
             />
             <Field
@@ -265,14 +299,15 @@ function Editor({ product }: { product: Product | undefined }) {
               value={v.stockText}
               onChangeText={(t) => setVariant(i, { stockText: t })}
               error={errors.stock(i)}
+              inputRef={(el) => { stockRefs.current[v.id] = el; }}
+              // "Low" beside the number instead of a sentence under every colour (design review 12).
+              tag={Number(v.stockText) > 0 && Number(v.stockText) <= LOW_STOCK ? { text: 'Low', tone: 'warn' } : null}
               hint={
                 !v.isNew && (stock.get(v.id) ?? 0) < 0
                   ? 'Oversold: sold more than counted.'
                   : !v.isNew && (stock.get(v.id) ?? 0) !== v.shownStock
                     ? changedSinceOpened((stock.get(v.id) ?? 0) - v.shownStock)
-                    : showInCatalog && Number(v.stockText) > 0 && Number(v.stockText) <= LOW_STOCK
-                      ? 'Catalog shows Low on stock.'
-                      : undefined
+                    : undefined
               }
               style={styles.variantStock}
             />
@@ -283,23 +318,22 @@ function Editor({ product }: { product: Product | undefined }) {
             ) : null}
           </View>
         ))}
-        <Txt variant="small">Tap a colour&apos;s photo to remove it. The first photo of each colour shows in the cart and on receipts.</Txt>
+        <Txt variant="small">The first photo of each colour shows in the cart and on receipts.{showInCatalog ? ` "Low" means the catalog shows Low on stock (${LOW_STOCK} or fewer).` : ''}</Txt>
         <Button label="Add colour" variant="outline" icon="add" onPress={() => setVariants([...variants, { id: newId(), name: '', photos: [], stockText: '0', shownStock: 0, isNew: true }])} style={styles.addColour} />
       </Card>
 
-      {tried && !valid ? <Txt color={colors.accent} weight="semibold">Fix the highlighted fields to save.</Txt> : null}
-      <View style={styles.actions}>
-        {product ? <Button label="Delete product" variant="danger" onPress={() => setConfirmDelete(true)} /> : null}
-        <View style={{ flex: 1 }} />
-        <Button label="Cancel" variant="ghost" onPress={() => router.replace('/products')} />
-        <Button label="Save" size="lg" onPress={submit} disabled={!!busyPhoto} />
-      </View>
+      {product ? (
+        <View style={styles.actions}>
+          <Button label="Delete product" variant="danger" onPress={() => setConfirmDelete(true)} />
+        </View>
+      ) : null}
 
       <ConfirmDialog
         visible={confirmDelete}
         title={`Delete ${product?.name ?? 'this product'}?`}
         message="It disappears from Sell. Past orders keep its name and price."
         confirmLabel="Delete"
+        cancelLabel="Keep product"
         onCancel={() => setConfirmDelete(false)}
         onConfirm={() => {
           setConfirmDelete(false);
@@ -311,8 +345,20 @@ function Editor({ product }: { product: Product | undefined }) {
         }}
       />
     </Screen>
+    {/* Save always in view, however long the colour list (design review 12). */}
+    <View style={[styles.saveBar, { paddingBottom: 12 + insets.bottom }]}>
+      <Txt numberOfLines={1} style={styles.saveNote} color={tried && !valid ? colors.accent : dirty ? colors.warnInk : colors.muted} weight={dirty || (tried && !valid) ? 'semibold' : undefined}>
+        {tried && !valid ? (missing.length ? `Add the ${missing.join(' and ')}` : 'Fix the highlighted fields') : dirty ? 'Changes not saved' : product ? `${product.name} · ${variants.length} ${variants.length === 1 ? 'colour' : 'colours'}` : 'New product'}
+      </Txt>
+      <Button label="Cancel" variant="ghost" onPress={() => router.replace('/products')} />
+      <Button label="Save" size="lg" onPress={submit} disabled={!!busyPhoto} />
+    </View>
+    </View>
   );
 }
+
+/** Colour photos in Edit product: twice the old size, so they can be checked at a glance. */
+const COLOUR_PHOTO = 80;
 
 const styles = StyleSheet.create({
   top: { flexDirection: 'row', flexWrap: 'wrap', gap: 24 },
@@ -336,12 +382,15 @@ const styles = StyleSheet.create({
   chipOn: { borderColor: colors.accent, backgroundColor: colors.accentSoft },
   chipText: { fontFamily: fonts.semibold },
   variant: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-start', gap: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.line },
-  colourPhotos: { width: 3 * 52 + 2 * 6, flexDirection: 'row', gap: 6, marginTop: 22 }, // room for 3, so the colour names line up
-  smallRemove: { position: 'absolute', right: 3, top: 3, width: 18, height: 18, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255, 255, 255, 0.92)' },
-  smallAdd: { width: 52, height: 52, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.lineStrong, borderRadius: radius.md },
+  colourPhotos: { width: 3 * COLOUR_PHOTO + 2 * 10, flexDirection: 'row', gap: 10, marginTop: 22 }, // room for 3, so the colour names line up
+  smallRemove: { position: 'absolute', right: -7, top: -7, width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.ink, borderWidth: 2, borderColor: colors.white },
+  smallAdd: { width: COLOUR_PHOTO, height: COLOUR_PHOTO, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.lineStrong, borderRadius: radius.md },
   variantName: { flex: 1, minWidth: 180 },
   variantStock: { width: 140 },
   removeBtn: { width: touch, height: touch, marginTop: 22, alignItems: 'center', justifyContent: 'center' },
   addColour: { alignSelf: 'flex-start' },
   actions: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
+  problems: { padding: 12, borderRadius: radius.md, backgroundColor: colors.accentSoft },
+  saveBar: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.line, backgroundColor: colors.white, boxShadow: '0 -6px 18px rgba(31, 26, 28, 0.06)' },
+  saveNote: { flex: 1, minWidth: 0 },
 });

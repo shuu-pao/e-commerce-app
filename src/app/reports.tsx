@@ -5,7 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { ordersToCsv } from '@/domain/csv';
 import { addDays, dateKey, formatDate, formatDay, formatMonth } from '@/domain/dates';
 import { formatPeso } from '@/domain/money';
-import { bestSellers, byDay, byPayment, filterOrders, periodRange, shiftPeriod, summarize, type Period, type Range } from '@/domain/reports';
+import { bestSellers, byDay, byPayment, filterOrders, pcs, periodRange, shiftPeriod, summarize, type Period, type Range } from '@/domain/reports';
 import { ONLINE_EVENT_ID, paymentLabel } from '@/domain/types';
 import { useAppState, useEventName, useLive } from '@/data/hooks';
 import { downloadText } from '@/lib/download';
@@ -128,13 +128,13 @@ export default function Reports() {
         <View style={styles.cols}>
           <Card style={styles.col}>
             <Txt variant="heading">Best sellers</Txt>
-            <BarList rows={best.map((b) => ({ key: b.productId, label: b.name, value: b.pieces, detail: `${b.pieces} pcs · ${formatPeso(b.sales)}` }))} />
+            <BarList rows={best.map((b) => ({ key: b.productId, label: b.name, value: b.pieces, detail: `${pcs(b.pieces)} · ${formatPeso(b.sales)}` }))} />
           </Card>
           <View style={[styles.col, { gap: 14 }]}>
             <Card>
               <Txt variant="heading">By day</Txt>
               {days.map((d) => (
-                <Row key={d.day} label={formatDay(d.day)} value={`${d.orders} ${d.orders === 1 ? 'order' : 'orders'} · ${d.pieces} pcs · ${formatPeso(d.sales)}`} />
+                <Row key={d.day} label={formatDay(d.day)} value={`${d.orders} ${d.orders === 1 ? 'order' : 'orders'} · ${pcs(d.pieces)} · ${formatPeso(d.sales)}`} />
               ))}
             </Card>
             <Card>

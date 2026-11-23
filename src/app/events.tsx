@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { dateKey, formatDate } from '@/domain/dates';
+import { dateKey } from '@/domain/dates';
 import { formatPeso } from '@/domain/money';
 import { filterOrders, summarize } from '@/domain/reports';
 import type { ShopEvent } from '@/domain/types';
@@ -11,16 +11,13 @@ import { newId, remove, save, setCurrentEvent } from '@/data/store';
 import { Button } from '@/ui/Button';
 import { ConfirmDialog } from '@/ui/ConfirmDialog';
 import { DateField } from '@/ui/DateField';
+import { eventDates } from '@/ui/EventPicker';
 import { Field } from '@/ui/Field';
 import { Card, Screen } from '@/ui/Screen';
 import { colors, radius } from '@/ui/theme';
 import { Txt } from '@/ui/Txt';
 
-function dates(e: ShopEvent): string {
-  if (e.id === ONLINE_EVENT_ID) return 'Orders between events';
-  if (!e.startDate) return '';
-  return e.endDate && e.endDate !== e.startDate ? `${formatDate(e.startDate)} – ${formatDate(e.endDate)}` : formatDate(e.startDate);
-}
+const dates = eventDates;
 
 /** Events are added on the iPad on the day; every order goes to the current one until it's changed. */
 export default function Events() {
@@ -58,7 +55,7 @@ export default function Events() {
   return (
     <Screen maxWidth={900}>
       <View style={styles.current}>
-        <Txt variant="label" color={colors.accentDark}>Selling at now</Txt>
+        <Txt variant="label" color={colors.accentDark}>Now selling at</Txt>
         <Txt variant="heading">{current ? current.name : 'No event chosen'}</Txt>
         <Txt color={colors.body}>
           {current ? 'New orders go to this event until you change it. Pick Online at checkout for an Instagram order.' : 'Pick an event below, or add today’s.'}
@@ -116,6 +113,7 @@ export default function Events() {
         title={removing ? `Delete ${removing.name}?` : 'Delete event?'}
         message="It has no orders, so nothing else changes."
         confirmLabel="Delete"
+        cancelLabel="Keep event"
         onCancel={() => setRemoving(null)}
         onConfirm={() => {
           if (removing) {

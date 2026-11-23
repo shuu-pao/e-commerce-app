@@ -99,7 +99,7 @@ them in `.env` before `npm run build:web`.
 
 Anyone who opens the site without signing in sees the catalog: the products switched to
 **Show in catalog** on Edit product (off for new products), with prices, colours and
-"Sold out" / "Low on stock" (5 pieces or fewer), never the stock count. **Message us on
+"Sold out" / "Low on stock" (3 pieces or fewer), never the stock count. **Message us on
 Instagram** opens instagram.com/caracebu, and **Shop owner? Sign in** at the bottom opens the
 sign-in screen. A device that has synced before (the owner's iPad or computer) opens on
 sign-in instead.

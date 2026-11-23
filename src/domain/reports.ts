@@ -80,6 +80,11 @@ export interface DayRow {
 }
 
 /** Sales per day paid; pass orders from filterOrders with sales: true. */
+/** "1 pc", "3 pcs": the short count for Best sellers. */
+export function pcs(n: number): string {
+  return `${n} ${n === 1 ? 'pc' : 'pcs'}`;
+}
+
 export function byDay(orders: Order[]): DayRow[] {
   const rows = new Map<string, DayRow>();
   for (const o of orders) {

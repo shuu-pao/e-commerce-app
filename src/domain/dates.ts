@@ -61,6 +61,15 @@ const fullDayFmt = new Intl.DateTimeFormat('en-PH', { day: 'numeric', month: 'sh
 const timeFmt = new Intl.DateTimeFormat('en-PH', { hour: 'numeric', minute: '2-digit' });
 const monthFmt = new Intl.DateTimeFormat('en-PH', { month: 'long', year: 'numeric' });
 
+const shortDayFmt = new Intl.DateTimeFormat('en-PH', { day: 'numeric', month: 'short' });
+
+/** "Nov 16 – 22" for a short filter button; the year shows only when it isn't this year's. */
+export function formatRange(from: string, to: string, today: string): string {
+  const fmt = from.slice(0, 4) === today.slice(0, 4) && to.slice(0, 4) === today.slice(0, 4) ? shortDayFmt : fullDayFmt;
+  if (from === to) return fmt.format(keyToDate(from));
+  return typeof fmt.formatRange === 'function' ? fmt.formatRange(keyToDate(from), keyToDate(to)) : `${fmt.format(keyToDate(from))} – ${fmt.format(keyToDate(to))}`;
+}
+
 /** Sun 18 Oct */
 export function formatDay(key: string): string {
   return dayFmt.format(keyToDate(key));

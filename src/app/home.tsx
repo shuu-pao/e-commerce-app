@@ -1,16 +1,17 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { dateKey, formatDate } from '@/domain/dates';
+import { addDays, dateKey, formatDate } from '@/domain/dates';
 import { formatPeso } from '@/domain/money';
-import { bestSellers, filterOrders, summarize } from '@/domain/reports';
+import { bestSellers, byDay, filterOrders, pcs, summarize } from '@/domain/reports';
 import { useAppState } from '@/data/hooks';
 import { BarList } from '@/ui/BarList';
 import { Button } from '@/ui/Button';
+import { DayBars } from '@/ui/DayBars';
 import { Card, Screen } from '@/ui/Screen';
 import { Stat } from '@/ui/Stat';
-import { colors, fonts, radius } from '@/ui/theme';
+import { colors } from '@/ui/theme';
 import { Txt } from '@/ui/Txt';
 
 const HIDDEN = '₱ ••••';
@@ -29,6 +30,13 @@ export default function Home() {
   const s = summarize(todays);
   const peso = (cents: number) => (shown ? formatPeso(cents) : HIDDEN);
   const best = bestSellers(todays, 5);
+  // The last 7 days, today last (small fixes: replaces the shortcuts that repeated the Reports menu item).
+  const week = useMemo(() => {
+    const from = addDays(today, -6);
+    const days = new Map(byDay(filterOrders(Object.values(orders), { range: { from, to: today }, sales: true })).map((d) => [d.day, d.sales]));
+    return Array.from({ length: 7 }, (_, i) => addDays(from, i)).map((day) => ({ day, value: days.get(day) ?? 0 }));
+  }, [orders, today]);
+  const weekTotal = week.reduce((n, d) => n + d.value, 0);
 
   return (
     <Screen maxWidth={1000}>
@@ -50,39 +58,25 @@ export default function Home() {
         <Stat label="Sales today" value={peso(s.sales)} />
         <Stat label="Orders today" value={String(s.orders)} />
         <Stat label="Pieces sold today" value={String(s.pieces)} />
-        {event && !event.deleted ? <Stat label={`${event.name} so far`} value={peso(summarize(eventOrders).sales)} /> : null}
+        {event && !event.deleted ? <Stat label="This event" value={peso(summarize(eventOrders).sales)} note={event.name} /> : null}
       </View>
 
       <View style={styles.cols}>
         <Card style={styles.col}>
           <Txt variant="heading">Best sellers today</Txt>
           {best.length ? (
-            <BarList rows={best.map((b) => ({ key: b.productId, label: b.name, value: b.pieces, detail: `${b.pieces} pcs · ${peso(b.sales)}` }))} />
+            <BarList rows={best.map((b) => ({ key: b.productId, label: b.name, value: b.pieces, detail: `${pcs(b.pieces)} · ${peso(b.sales)}` }))} />
           ) : (
             <Txt color={colors.muted}>No sales yet today.</Txt>
           )}
         </Card>
         <Card style={styles.col}>
-          <Txt variant="heading">Reports</Txt>
-          {(
-            [
-              ['day', 'Daily sales'],
-              ['week', 'Weekly sales'],
-              ['month', 'Monthly sales'],
-              ['event', 'Sales per event'],
-              ['range', 'Choose dates'],
-            ] as const
-          ).map(([view, label]) => (
-            <Pressable
-              key={view}
-              accessibilityRole="link"
-              onPress={() => router.navigate({ pathname: '/reports', params: { view } })}
-              style={({ hovered }) => [styles.link, hovered && { borderColor: colors.accent }]}
-            >
-              <Txt style={styles.linkText}>{label}</Txt>
-              <Txt color={colors.muted}>›</Txt>
-            </Pressable>
-          ))}
+          <View style={styles.chartHead}>
+            <Txt variant="heading" style={{ flex: 1 }}>Sales, last 7 days</Txt>
+            <Txt weight="semibold" color={colors.body}>{peso(weekTotal)}</Txt>
+          </View>
+          <DayBars today={today} bars={week.map((d) => ({ ...d, text: peso(d.value) }))} />
+          <Button label="Open Reports" variant="ghost" icon="chevron-forward" onPress={() => router.navigate({ pathname: '/reports', params: { view: 'day' } })} style={styles.more} />
         </Card>
       </View>
     </Screen>
@@ -94,6 +88,6 @@ const styles = StyleSheet.create({
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
   cols: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
   col: { flexGrow: 1, flexBasis: 320 },
-  link: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, borderWidth: 1, borderColor: colors.lineStrong, borderRadius: radius.md },
-  linkText: { fontFamily: fonts.semibold },
+  chartHead: { flexDirection: 'row', alignItems: 'baseline', gap: 12 },
+  more: { alignSelf: 'flex-start', marginLeft: -8 },
 });
