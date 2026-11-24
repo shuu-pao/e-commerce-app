@@ -9,7 +9,7 @@ new session won't know it, so record it here in the same turn.
 - **The app is built (version 1, 2026-10-22)** and merged into `main`
   (pushed to GitHub). Every screen of screen plan v2 works, offline selling
   works, and tests, typecheck, lint, expo-doctor and the web build pass.
-  It runs on one device until Supabase is set up (README, "Set up syncing").
+  It runs on one device until Supabase is set up (docs/SETUP.md, "Set up syncing").
   See "Build notes" below.
 - **The client answered the questions page** (round 1 on 2026-10-20,
   round 2 on 2026-10-22). Answers are under Decisions below. Question 28
@@ -63,10 +63,10 @@ new session won't know it, so record it here in the same turn.
   `caracebu--<id>.expo.app`) switched it within 15 s.
 - **The public catalog is live** (2026-10-24, mock v4 approved by the
   client): migration re-run in Supabase, deployed; caracebu.expo.app shows
-  the catalog to visitors. See "Public catalog" below and README. Checked
+  the catalog to visitors. See "Public catalog" below and docs/SETUP.md. Checked
   2026-11-05: 6 real products show, with their photos.
 - Next: Supabase Site URL and redirect URLs, invite the client, install on
-  the iPad (README). The keep-awake ping works (GitHub secrets set, tested 2026-10-22).
+  the iPad (docs/SETUP.md). The keep-awake ping works (GitHub secrets set, tested 2026-10-22).
 - **Deployed 2026-11-06:** the Safari 12 s font stall fix, getAll, the
   service worker only on owner devices, the Products category chips and
   the catalog gallery (Build notes, Decisions). The owner's devices reload
@@ -189,7 +189,7 @@ dropped the idea.
 
 ## Build notes (version 1, 2026-10-22)
 
-How the code is laid out is in README.md ("How it fits together"). What a
+How the code is laid out is in README.md ("Project structure" and "Engineering highlights"). What a
 new session needs to know beyond that:
 
 - **Design review build** (2026-11-23, the answers above). Checkout keeps
