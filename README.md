@@ -1,157 +1,98 @@
-# caracebu
+# caracebu: Offline-first point of sale
 
-The cashier app for caracebu: sell at events on an iPad, add products on a computer,
-see orders and reports. It's an installable web app (no App Store), it keeps selling
-with no internet, and it syncs the iPad and the computer through Supabase's free plan.
+A cashier and inventory app I built for **caracebu**, a small Cebu-based shop that sells at pop-up events. The owner sells on an iPad at events, manages products on a computer, and checks orders and reports anywhere. The app keeps selling with no internet and syncs both devices once they're back online.
 
-Decisions and the reasons behind them are in [docs/BRIEF.md](docs/BRIEF.md).
+**[🛍️ Public catalog (live)](https://caracebu.expo.app)** · [Setup guide](docs/SETUP.md) · [Design decisions](docs/BRIEF.md)
 
-## Try it
+![Sell screen with an order in progress](docs/screenshots/sell.png)
+
+<details>
+<summary>Checkout screen</summary>
+
+![Checkout with event, discount, payment method and change](docs/screenshots/checkout.png)
+
+</details>
+
+<sub>Screenshots use the app's built-in sample products (device-only mode), not real shop data.</sub>
+
+---
+
+## The problem
+
+Pop-up events have unreliable Wi-Fi, and the shop was tracking sales by hand. The owner needed something that:
+
+- works **fully offline** during an event and never loses a sale,
+- keeps **stock correct** when the iPad and the computer both make changes,
+- costs **nothing** to run (no App Store fees, a free database tier),
+- gives customers a **public product catalog** without exposing business data.
+
+## Features
+
+- **Fast checkout:** a product grid with colour variants, discounts, cash change and split payments.
+- **Offline selling:** sales are saved on the device and upload automatically when the connection returns. The sidebar shows how many are waiting.
+- **Two-device sync** between the iPad and the computer through Supabase.
+- **Inventory:** stock is worked out from counts and sales, with "Low on stock" and "Sold out" states.
+- **Orders, invoices and receipts:** PNG or one-page PDF documents are generated in the browser, even offline. Invoiced orders can wait as "Not paid yet".
+- **Reports per event,** plus CSV export.
+- **Public catalog:** visitors can browse products, prices and availability, but never stock counts or orders.
+- **Installable web app (PWA):** added to the iPad's Home Screen, with no App Store needed. It updates safely and never swaps versions mid-sale.
+
+## Tech stack
+
+| Area | Tools |
+| --- | --- |
+| App | Expo (React Native + React Native Web), Expo Router, TypeScript |
+| Data | Supabase (Postgres, Auth, Storage), IndexedDB on the device |
+| Offline | Service worker (Workbox), a local outbox, custom sync and merge logic |
+| Security | Postgres row-level security; owner-only access; a public read-only catalog function |
+| Testing | Node test runner (domain logic), PGlite (the database migration and access rules in real Postgres) |
+| CI | GitHub Actions (scheduled keep-alive for the free Supabase project) |
+
+## Engineering highlights
+
+- **Offline-first sync with an outbox.** Every change is written locally first and queued. `src/data/sync.ts` uploads the queue and pulls the other device's changes, and the newer change wins.
+- **Conflict-free stock.** Stock is never stored as a single number that two devices could overwrite. It's derived from stock changes (what was counted) minus what orders sold, so offline sales and computer edits add up correctly after syncing.
+- **Safe order numbering across offline devices.** If two offline devices pick the same order number, the server gives the later upload the next free number.
+- **Money as integers.** All amounts are stored in centavos, so floating-point rounding never touches money.
+- **Database rules are tested.** `npm run test:db` runs the Supabase migration in an in-process Postgres (PGlite) and checks the access rules and uploads.
+- **Pure, tested domain layer.** Totals, discounts, split payments, stock, reports, CSV and invoice content live in `src/domain/` with no UI dependencies.
+
+## Project structure
+
+```
+src/app/      screens (Expo Router): sell, checkout, orders, products, events, reports, shop
+src/domain/   pure business logic + tests: money, checkout, stock, reports, CSV, documents
+src/data/     local store + outbox, Supabase sync, public catalog, storage adapters
+src/ui/       shared components and design tokens
+supabase/     database schema, access rules and their tests
+public/       PWA manifest, icons, service worker registration
+```
+
+## Run it locally
+
+Requires Node.js 20+.
 
 ```bash
+git clone https://github.com/shuu-pao/e-commerce-app.git
+cd e-commerce-app
 npm install
-npm run web          # opens http://localhost:8081
+npm run web          # http://localhost:8081
 ```
 
-Without Supabase keys the app runs on that one device: no sign-in, no sync. Tap
-**Try it with sample products** on the empty Sell screen to fill it with the products
-from the mock.
+Without Supabase keys the app runs on one device with no sign-in and no sync. On the empty Sell screen, tap **Try it with sample products** to load sample data.
 
-**Testing with `.env` filled in:** `npm run web:local` (http://localhost:8083) ignores the
-keys and runs device-only, so testing never touches the shop's live data. The sidebar says
-**On this device only**; if it doesn't, stop and check before changing anything.
+| Command | What it does |
+| --- | --- |
+| `npm test` | Domain tests: money, discounts, split payment, stock, reports, CSV, sync merging |
+| `npm run test:db` | Supabase migration and access rules in real Postgres (PGlite) |
+| `npm run typecheck` | TypeScript (run `npx expo start` once first to generate `.expo/types`) |
+| `npx expo lint` | Lint |
+| `npm run build:web` | Production web build and service worker in `dist/` |
 
-## Checks
+To connect Supabase, publish the site or install it on an iPad, see the **[setup guide](docs/SETUP.md)**.
 
-```bash
-npm test             # money, discounts, split payment, stock, reports, CSV, sync merging
-npm run test:db      # the Supabase migration in real Postgres (PGlite): access rules, uploads
-npm run typecheck    # needs .expo/types: run `npx expo start` once first
-npx expo lint
-npm run build:web    # production build + service worker in dist/
-```
+## About the author
 
-## Set up syncing (Supabase, free plan)
+**Paolo Jansen Enrera**, Software Engineering Associate at Accenture and BS Computer Engineering graduate of the University of San Carlos, Cebu. I build web and mobile apps as personal projects. I built this one for a real small business.
 
-1. At [supabase.com/dashboard](https://supabase.com/dashboard), **New project**:
-   - Organization: your personal one (Free plan)
-   - Project name: `caracebu`
-   - Database password: **Generate a password**, save it in your password manager (the app
-     never uses it; you'd need it only to connect a database tool)
-   - Region: **Southeast Asia (Singapore)**, the closest to Cebu
-   - Security options: keep the **Data API** turned on (the app talks to it)
-   - **Create new project**, then wait a couple of minutes.
-2. **SQL Editor › New query**: paste all of `supabase/migrations/20261022000000_records.sql`,
-   **Run**. Expect "Success. No rows returned".
-3. **Authentication › Sign In / Providers**: turn off **Allow new users to sign up**, Save.
-4. Create the owner's login **by invitation**, so only the client knows the password. Do it
-   after publishing (see "Publish the website"), because the email links to the live site:
-   - **Authentication › URL Configuration**: Site URL `https://caracebu.expo.app` (your
-     published address). Under Redirect URLs add the same address, plus
-     `http://localhost:8081` for testing on your computer. Save.
-   - **Authentication › Users › Add user › Send invitation**: the client's email, **Invite**.
-   - Copy the new user's **User UID** (it's listed right away), then in the SQL Editor run:
-     ```sql
-     insert into public.shop_owners (user_id) values ('PASTE-USER-UID-HERE');
-     ```
-     Only users in `shop_owners` can read or write the data.
-   - The client opens the email and taps the link: the app shows **Welcome! Choose your
-     password**. After that they sign in with their email and that password.
-   - For your own testing, **Add user › Create new user** (tick **Auto Confirm User**) with
-     your email works the same way; add that UID to `shop_owners` too, and delete the test
-     user before handing over.
-   - Forgotten password: **Forgot password?** on the sign-in screen emails a reset link.
-     Signed in, **Change password** is in the sidebar. The free plan sends only a few auth
-     emails per hour.
-5. Copy `.env.example` to `.env`. From the project's **Connect** dialog (or **Project
-   Settings › API Keys**) copy the **Project URL** into `EXPO_PUBLIC_SUPABASE_URL` and the
-   **publishable** key (`sb_publishable_…`; the legacy `anon` key also works) into
-   `EXPO_PUBLIC_SUPABASE_ANON_KEY`. Never the secret / service_role key.
-6. Restart `npm run web`. The app now asks to sign in; after signing in the sidebar shows
-   **Online · Everything is synced**.
-
-**Tighter sign-in limit (recommended).** In **Authentication › Rate Limits**, set the
-token limit (sign-ins and token refreshes) to **30 requests per 5 minutes** instead of 150.
-One shop with a couple of devices never needs more, and it slows down password guessing.
-
-**Updating the database.** `supabase/migrations/20261022000000_records.sql` is safe to run
-again: paste the whole file into **SQL Editor** and **Run** after it changes, **before**
-publishing the app version that needs it.
-
-**Keeping the free project awake.** Supabase pauses a free project after a week without
-use. `.github/workflows/keep-supabase-awake.yml` pings it every 3 days: add
-`SUPABASE_URL` and `SUPABASE_ANON_KEY` as repository secrets (Settings › Secrets ›
-Actions). GitHub stops schedules in a public repo after 60 days without commits; re-enable
-it from the Actions tab if that happens.
-
-## Publish the website
-
-```bash
-npm run build:web
-npx eas-cli@latest deploy        # EAS Hosting (free plan); add --prod for the main address
-```
-
-Any other static host works too if it sends every unknown path to `/index.html` (it's a
-single-page app). The `EXPO_PUBLIC_SUPABASE_*` values are baked in at build time, so set
-them in `.env` before `npm run build:web`.
-
-## The public catalog
-
-Anyone who opens the site without signing in sees the catalog: the products switched to
-**Show in catalog** on Edit product (off for new products), with prices, colours and
-"Sold out" / "Low on stock" (3 pieces or fewer), never the stock count. **Message us on
-Instagram** opens instagram.com/caracebu, and **Shop owner? Sign in** at the bottom opens the
-sign-in screen. A device that has synced before (the owner's iPad or computer) opens on
-sign-in instead.
-
-- Visitors read one database function, `public.catalog()`; everything else stays owner-only.
-- Photos: after each sync the owner's device copies catalog photos to the public `catalog`
-  storage bucket, named by their SHA-256, so visitors load cached images instead of pulling
-  photos through the database. A newly switched-on product's photo appears once the owner's
-  device has synced.
-- Needs the current migration (it creates the function, the bucket and its upload rules).
-
-## Install on the iPad
-
-Open the site in **Safari**, tap **Share › Add to Home Screen › Add**. Then open it **from
-the new icon** and sign in there: on iPad the Home Screen app keeps its own storage, separate
-from Safari, so signing in inside Safari doesn't carry over. Open it once on Wi-Fi before an
-event so it downloads everything.
-
-- Sales made offline are saved on the iPad and marked *Not synced*; they upload by
-  themselves when the internet is back. The sidebar shows how many are waiting.
-- Don't clear Safari's website data or delete the app while orders are waiting, and
-  sign-out is blocked until they've uploaded.
-- When a new version is published, the sidebar shows **A new version is ready · Reload**.
-  Without the tap, the new version starts the next time the app opens; an open app is never
-  swapped in the middle of a sale. Only devices that have signed in keep the app for offline
-  use; visitors to the catalog always get the newest version.
-
-## How it fits together
-
-```
-src/app/        screens (Expo Router): sell, checkout, orders, document (invoice, receipt), home, reports, products, categories, events, shop (Shop details)
-src/domain/     pure logic with tests: money, totals, discounts, payments, stock, reports, CSV, invoices
-src/data/       store.ts (records + outbox, saved on the device), sync.ts (Supabase), catalog.ts (public catalog), storage.*.ts
-src/ui/         shared components and the design tokens from the mock
-scripts/        icons.py: rebuilds the 3 KB icon font (add an Ionicons name, run it)
-supabase/       database schema and access rules
-public/         index.html (service worker registration), manifest, icons
-```
-
-- **Offline first.** Every change is saved on the device (IndexedDB on the web) and put
-  in an outbox. `sync.ts` uploads the outbox and downloads the other device's changes
-  whenever there's a connection. The newer change wins.
-- **Stock** is never stored as a number that two devices could overwrite. It's worked out
-  from stock changes (what the seller counted) minus what orders sold, so sales on an
-  offline iPad and edits on the computer add up correctly after syncing.
-- **Order numbers** continue from the highest known number. If two offline devices pick the
-  same number, the server gives the later upload the next free number.
-- **Invoices and receipts** are drawn in the browser from the order and the Shop details
-  (`src/domain/documents.ts` decides the content, `src/lib/documents.web.ts` draws it) and
-  saved as a PNG or a one-page PDF (`src/lib/pdf.ts`), offline. An invoiced order can wait
-  "Not paid yet": it holds its pieces but isn't a sale until Mark as paid.
-- **Photos** are cropped square and shrunk to 600 px on the device, so they work offline
-  with no storage bucket. A product's first photo and each colour's first stay inside the
-  product record; the others are records of their own (`photos`), so saving a product
-  never uploads its photos again.
+[LinkedIn](https://www.linkedin.com/in/paolo-jansen-enrera/) · [GitHub](https://github.com/shuu-pao)
